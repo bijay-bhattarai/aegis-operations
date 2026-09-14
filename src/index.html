@@ -191,7 +191,7 @@
     .metric.unknown .metric-label{color:#171008;font-weight:800}
     .metric-label{font-size:.875rem}
     #control-dialog label{display:block;margin-top:12px}
-    #control-dialog input,#control-dialog textarea{display:block;width:100%;padding:10px;background:var(--panel);color:var(--text);border:1px solid var(--line);font:inherit}
+    #control-dialog input,#control-dialog textarea,#control-dialog select{display:block;width:100%;padding:10px;background:var(--panel);color:var(--text);border:1px solid var(--line);font:inherit}
     #control-record{white-space:pre-wrap;overflow-wrap:anywhere}
     #control-list small{display:block;margin-top:6px;font-size:.875rem}
     .agent-task{height:auto}.icon-btn{flex-shrink:0}
@@ -295,7 +295,12 @@
     <div class="drawer-body">
       <p>Session-only demo. Assessor identities are self-reported, not authenticated. Refresh resets records.</p>
       <pre id="control-record"></pre>
-      <label>Evidence source<input id="evidence-source"></label>
+      <label>Evidence source system<input id="evidence-source" placeholder="Entra ID"></label>
+      <label>Artifact type<select id="artifact-type"><option value="export">Export</option><option value="screenshot">Screenshot</option><option value="log_query">Log query</option><option value="attestation">Attestation</option><option value="config_snapshot">Configuration snapshot</option></select></label>
+      <label>Artifact locator<input id="artifact-locator" placeholder="artifact://session/..."></label>
+      <label>Artifact SHA-256<input id="artifact-hash" placeholder="64 lowercase hexadecimal characters"></label>
+      <label>Collector type<select id="collector-type"><option value="agent">Agent</option><option value="person">Person (self-reported)</option></select></label>
+      <label>Collector ID<input id="collector-id" placeholder="compliance"></label>
       <button class="btn" id="collect-control">Record collected evidence</button>
       <label>Assessor identity (unverified demo input)<input id="control-assessor"></label>
       <label>Assessment rationale<textarea id="control-rationale"></textarea></label>
@@ -421,7 +426,18 @@
     const cycle={cycle_id:'2026-09',cycle_start:'2026-09-01T00:00:00Z',cycle_end:'2026-10-01T00:00:00Z'};
     const controlRepo=createControlRepository();
     for(const [control_id,name] of [['CTRL-01','Sign-in review'],['CTRL-02','Exposure review'],['CTRL-03','Access review'],['CTRL-04','SOC 2 CC6.1 evidence'],['CTRL-05','Detection review']])controlRepo.add({control_id,name,...cycle});
-    for(const id of ['CTRL-01','CTRL-04'])controlRepo.agent.collect(id,{evidence_id:id+'-E1',source:'Demo observation record',collected_at:'2026-09-13T20:00:00Z'});
+    for(const id of ['CTRL-01','CTRL-04']) {
+      const identityControl=id==='CTRL-01';
+      controlRepo.agent.collect(id,{
+        evidence_id:id+'-E1',source:identityControl?'Entra ID':'GRC',
+        collected_by:{type:'agent',id:identityControl?'identity':'compliance'},
+        collected_at:'2026-09-13T20:00:00Z',
+        artifact_ref:{
+          type:identityControl?'log_query':'config_snapshot',locator:'artifact://session/demo/'+id.toLowerCase(),
+          content_hash:{algorithm:'sha256',value:identityControl?'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa':'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb'}
+        }
+      });
+    }
     const controlDialog=document.querySelector('#control-dialog');let selectedControl;
     const labels={not_assessed:'Not assessed',evidence_collected:'Evidence collected · pending review',tested_pass:'Tested pass',tested_fail:'Tested fail',exception_approved:'Exception approved'};
     function renderControls(){
@@ -444,7 +460,15 @@
     document.querySelector('#control-list').addEventListener('click',e=>{const b=e.target.closest('[data-control-id]');if(b)showControl(b.dataset.controlId);});
     document.querySelector('#close-control').addEventListener('click',()=>controlDialog.close());
     document.querySelector('#collect-control').addEventListener('click',()=>{
-      try{controlRepo.agent.collect(selectedControl,{evidence_id:crypto.randomUUID(),source:document.querySelector('#evidence-source').value,collected_at:new Date().toISOString()});renderControls();showControl(selectedControl);notify('Evidence collected. Pending review.');}catch(e){notify(e.message);}
+      try{
+        const collectorType=document.querySelector('#collector-type').value;
+        const collected_by={type:collectorType,id:document.querySelector('#collector-id').value,...(collectorType==='person'?{identity_basis:'self_reported'}:{})};
+        controlRepo.agent.collect(selectedControl,{
+          evidence_id:crypto.randomUUID(),source:document.querySelector('#evidence-source').value,collected_by,collected_at:new Date().toISOString(),
+          artifact_ref:{type:document.querySelector('#artifact-type').value,locator:document.querySelector('#artifact-locator').value,content_hash:{algorithm:'sha256',value:document.querySelector('#artifact-hash').value}}
+        });
+        renderControls();showControl(selectedControl);notify('Evidence reference collected. Artifact remains unverified because this demo has no artifact resolver.');
+      }catch(e){notify(e.message);}
     });
     document.querySelectorAll('[data-control-status]').forEach(b=>b.addEventListener('click',()=>{
       try{controlRepo.reviewer.assess(selectedControl,b.dataset.controlStatus,{assessor:document.querySelector('#control-assessor').value,assessed_at:new Date().toISOString(),assessment_rationale:document.querySelector('#control-rationale').value});renderControls();showControl(selectedControl);notify('Assessment record added to this session.');}catch(e){notify(e.message);}

@@ -120,3 +120,23 @@ The accompanying `refactor.diff` includes every changed, deleted, and added stri
 
 45 Node checks pass: every state-pair transition, five restricted agent ports, required approval metadata, time ordering, immutable snapshots, initialization bypass rejection, UI syntax, removed decision/autonomy tools, and absence of outbound writer APIs. Browser UI and WebMCP runtime QA were not performed.
 
+## Structured evidence-reference copy
+
+- Evidence source system
+- Entra ID
+- Artifact type
+- Export
+- Screenshot
+- Log query
+- Attestation
+- Configuration snapshot
+- Artifact locator
+- artifact://session/...
+- Artifact SHA-256
+- 64 lowercase hexadecimal characters
+- Collector type
+- Agent
+- Person (self-reported)
+- Collector ID
+- compliance
+- Evidence reference collected. Artifact remains unverified because this demo has no artifact resolver.

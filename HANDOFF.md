@@ -8,13 +8,13 @@ Framework labels are context, not proof that executable senior-level playbooks e
 
 ## Current implementation
 
-Authored source lives in src/ with no build step. Static HTML/CSS with inline module JavaScript and two local ES modules. No backend, LLM calls, integrations, persistent database, authenticated reviewer roles or execution engine. Five agent panels contain demo observations. Six action records start pending_approval. Five controls start with either no evidence or collected demo evidence; zero controls initially pass or fail.
+Authored source lives in src/ with no build step. Static HTML/CSS with inline module JavaScript and two local ES modules. No backend, LLM calls, integrations, persistent database, authenticated reviewer roles, artifact resolver or execution engine. Five agent panels contain demo observations. Six action records start pending_approval. Five controls start with either no evidence or collected demo evidence references marked unverified; zero controls initially pass or fail.
 
 The browser model implements immutable snapshots, explicit transition checks, restricted agent/reviewer interfaces and a private assessment capability. These are local domain boundaries, NOT protection against someone controlling the browser runtime.
 
 Control cycles are pinned to September 2026 UTC. Time checks reject new evidence or assessments outside that cycle. Do not quietly relabel historical data as current. Add an explicit cycle workflow if requested.
 
-Current checks: 54 Node tests. They cover state transitions, data validation, restricted interfaces, some source checks, and script syntax. They do not establish browser usability, production security, regulatory compliance, or live framework accuracy.
+Current checks: 62 Node tests. They cover state transitions, data validation, restricted interfaces, structured evidence references, assessment supersession history, some source checks, and script syntax. They do not establish browser usability, production security, regulatory compliance, artifact resolution, or live framework accuracy.
 
 ## Important remaining work
 

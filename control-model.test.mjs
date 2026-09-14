@@ -1,11 +1,17 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
-import {Control,ControlStatus,createControlRepository,conclusionFor,coverage,coverageStatement,sortControls,effectiveStatus} from './src/control-model.mjs';
+import {createHash} from 'node:crypto';
+import {Control,ControlStatus,SupersedeReason,ArtifactType,ArtifactVerificationStatus,CollectorType,IdentityBasis,createControlRepository,conclusionFor,coverage,coverageStatement,sortControls,effectiveStatus} from './src/control-model.mjs';
 const input={control_id:'C1',name:'Control',cycle_id:'2026-09',cycle_start:'2026-09-01T00:00:00Z',cycle_end:'2026-10-01T00:00:00Z'};
-const evidence={evidence_id:'E1',source:'Observation',collected_at:'2026-09-13T20:00:00Z'};
+const artifact_ref={type:'log_query',locator:'artifact://session/entra/query-1842',content_hash:{algorithm:'sha256',value:'a'.repeat(64)}};
+const evidence={evidence_id:'E1',source:'Entra ID',collected_by:{type:'agent',id:'identity'},collected_at:'2026-09-13T20:00:00Z',artifact_ref};
 const assessment={assessor:'Demo reviewer',assessed_at:'2026-09-13T21:00:00Z',assessment_rationale:'Test observation'};
 const setup=()=>{const r=createControlRepository();r.add(input);return r;};
+const canonicalEvidence=e=>({
+ evidence_id:e.evidence_id,source:e.source,collected_by:{...e.collected_by},collected_at:e.collected_at,
+ artifact_ref:{...e.artifact_ref,content_hash:{...e.artifact_ref.content_hash},verification_status:e.artifact_ref.verification_status??'unverified'}
+});
 test('exact enum and no implicit pass',()=>{
  assert.deepEqual(Object.keys(ControlStatus),['not_assessed','evidence_collected','tested_pass','tested_fail','exception_approved']);
  const r=setup();assert.equal(r.agent.get('C1').status,'not_assessed');
@@ -29,6 +35,117 @@ test('new evidence clears prior conclusion and metadata',()=>{
  r.agent.collect('C1',{...evidence,evidence_id:'E2',collected_at:'2026-09-14T20:00:00Z'});
  assert.equal(r.agent.get('C1').status,'evidence_collected');assert.equal(r.agent.get('C1').assessor,null);
  assert.equal(conclusionFor(r.agent.get('C1')),null);
+ assert.equal(r.agent.get('C1').assessments.length,1);
+});
+
+test('supersede retains the byte-identical original and changes the current conclusion without new evidence',()=>{
+ const r=setup();r.agent.collect('C1',evidence);r.reviewer.assess('C1','tested_fail',assessment);
+ const before=r.agent.get('C1'),originalBytes=JSON.stringify(before.assessments[0]);
+ const expectedDigest=createHash('sha256').update(JSON.stringify([canonicalEvidence(evidence)])).digest('hex');
+ assert.equal(before.assessments[0].evidence_digest,expectedDigest);
+ const corrected={assessor:'Second demo reviewer',assessed_at:'2026-09-13T22:00:00Z',assessment_rationale:'Corrected interpretation',supersede_reason:'evidence_reinterpreted'};
+ const after=r.reviewer.supersede('C1','tested_pass',corrected);
+ assert.equal(JSON.stringify(after.assessments[0]),originalBytes);
+ assert.equal(after.assessments.length,2);assert.equal(after.current_assessment_id,2);
+ assert.deepEqual(after.assessments[1],{
+  assessment_id:2,status:'tested_pass',assessor:corrected.assessor,assessed_at:corrected.assessed_at,
+  assessment_rationale:corrected.assessment_rationale,evidence_digest:expectedDigest,
+  supersedes_assessment_id:1,supersede_reason:'evidence_reinterpreted',supersede_reason_text:null
+ });
+ assert.equal(after.status,after.assessments[1].status);assert.equal(after.assessor,after.assessments[1].assessor);
+ assert.equal(after.assessed_at,after.assessments[1].assessed_at);assert.equal(after.assessment_rationale,after.assessments[1].assessment_rationale);
+ assert.deepEqual(conclusionFor(after),{status:'tested_pass',assessor:corrected.assessor,assessed_at:corrected.assessed_at});
+ assert.deepEqual(coverage(r.agent.list(),'2026-09'),{in_scope:1,tested:1,passed:1,failed:0,not_assessed:0});
+});
+
+test('a control without a current assessment cannot be superseded',()=>{
+ const r=setup();
+ const correction={...assessment,supersede_reason:'recorded_in_error'};
+ assert.throws(()=>r.reviewer.supersede('C1','tested_pass',correction),/Current assessment required/);
+ r.agent.collect('C1',evidence);
+ assert.throws(()=>r.reviewer.supersede('C1','tested_pass',correction),/Current assessment required/);
+ assert.equal(r.agent.get('C1').assessments.length,0);
+});
+
+test('supersede requires human capability, valid reason metadata and ordered time; failures are atomic',()=>{
+ const r=setup();r.agent.collect('C1',evidence);r.reviewer.assess('C1','tested_fail',assessment);
+ assert.equal(r.agent.supersede,undefined);
+ const c=new Control(input);c.collect(evidence);
+ assert.throws(()=>c.supersede('tested_pass',{...assessment,supersede_reason:'recorded_in_error'}),/Human review capability required/);
+ const before=JSON.stringify(r.agent.get('C1'));
+ for(const bad of [
+  {...assessment,assessed_at:'2026-09-13T22:00:00Z'},
+  {...assessment,assessed_at:'2026-09-13T22:00:00Z',supersede_reason:'typo'},
+  {...assessment,assessed_at:'2026-09-13T22:00:00Z',supersede_reason:'other'},
+  {...assessment,assessed_at:'2026-09-13T22:00:00Z',supersede_reason:'recorded_in_error',supersedes_assessment_id:99},
+  {...assessment,assessed_at:'2026-09-13T20:30:00Z',supersede_reason:'recorded_in_error'},
+  {...assessment,assessed_at:'2026-10-01T00:00:00Z',supersede_reason:'recorded_in_error'}
+ ]){
+  assert.throws(()=>r.reviewer.supersede('C1','tested_pass',bad));
+  assert.equal(JSON.stringify(r.agent.get('C1')),before);
+ }
+ const corrected=r.reviewer.supersede('C1','tested_pass',{...assessment,assessed_at:'2026-09-13T22:00:00Z',supersede_reason:'other',supersede_reason_text:'Incorrect test population'});
+ assert.equal(corrected.assessments[1].supersede_reason_text,'Incorrect test population');
+ assert.deepEqual(Object.values(SupersedeReason),['recorded_in_error','evidence_reinterpreted','scope_corrected','other']);
+});
+
+test('assessment evidence digests capture the full evidence set at each assessment time',()=>{
+ const r=setup();r.agent.collect('C1',evidence);r.reviewer.assess('C1','tested_fail',assessment);
+ const first=r.agent.get('C1').assessments[0].evidence_digest;
+ const secondEvidence={...evidence,evidence_id:'E2',source:'Defender',collected_at:'2026-09-14T20:00:00Z',artifact_ref:{...artifact_ref,locator:'artifact://session/defender/export-2',content_hash:{algorithm:'sha256',value:'b'.repeat(64)}}};
+ r.agent.collect('C1',secondEvidence);
+ r.reviewer.assess('C1','tested_pass',{...assessment,assessed_at:'2026-09-14T21:00:00Z'});
+ const record=r.agent.get('C1'),canonical=JSON.stringify([canonicalEvidence(evidence),canonicalEvidence(secondEvidence)]);
+ assert.notEqual(record.assessments[1].evidence_digest,first);
+ assert.equal(record.assessments[1].evidence_digest,createHash('sha256').update(canonical).digest('hex'));
+ assert.equal(record.current_assessment_id,2);assert.equal(effectiveStatus(record),'tested_pass');
+ assert.throws(()=>{record.assessments[0].status='tested_pass';});
+});
+test('evidence records require immutable structured artifact and collector references',()=>{
+ const r=setup(),record=r.agent.collect('C1',evidence),stored=record.evidence[0];
+ assert.deepEqual(stored,canonicalEvidence(evidence));
+ assert.equal(stored.artifact_ref.verification_status,'unverified');
+ assert.throws(()=>{stored.artifact_ref.locator='changed';});
+ assert.throws(()=>{stored.artifact_ref.content_hash.value='b'.repeat(64);});
+ assert.deepEqual(Object.values(ArtifactType),['export','screenshot','log_query','attestation','config_snapshot']);
+ assert.deepEqual(Object.values(ArtifactVerificationStatus),['unverified','verified']);
+ assert.deepEqual(Object.values(CollectorType),['agent','person']);
+ assert.deepEqual(Object.values(IdentityBasis),['self_reported']);
+});
+test('missing or malformed artifact references and unsupported verification are rejected atomically',()=>{
+ const r=setup(),withoutArtifact={...evidence};delete withoutArtifact.artifact_ref;
+ const invalid=[
+  withoutArtifact,
+  {...evidence,artifact_ref:null},
+  {...evidence,artifact_ref:{...artifact_ref,type:'document'}},
+  {...evidence,artifact_ref:{...artifact_ref,locator:''}},
+  {...evidence,artifact_ref:{...artifact_ref,content_hash:null}},
+  {...evidence,artifact_ref:{...artifact_ref,content_hash:{algorithm:'md5',value:'a'.repeat(64)}}},
+  {...evidence,artifact_ref:{...artifact_ref,content_hash:{algorithm:'sha256',value:'A'.repeat(64)}}},
+  {...evidence,artifact_ref:{...artifact_ref,content_hash:{algorithm:'sha256',value:'a'.repeat(63)}}},
+  {...evidence,artifact_ref:{...artifact_ref,unexpected:true}}
+ ];
+ for(const bad of invalid)assert.throws(()=>r.agent.collect('C1',bad));
+ assert.throws(()=>r.agent.collect('C1',{...evidence,artifact_ref:{...artifact_ref,verification_status:'verified'}}),/no artifact resolver exists/);
+ assert.throws(()=>r.agent.collect('C1',{...evidence,artifact_ref:{...artifact_ref,verification_status:'pending'}}),/Invalid artifact_ref verification_status/);
+ assert.equal(r.agent.get('C1').evidence.length,0);
+});
+test('collector identities distinguish known agents from self-reported people',()=>{
+ for(const id of ['unknown','SOC Agent'])assert.throws(()=>setup().agent.collect('C1',{...evidence,collected_by:{type:'agent',id}}));
+ for(const id of ['identity','IDENTITY','Identity Agent','field-agent-7']){
+  assert.throws(()=>setup().agent.collect('C1',{...evidence,collected_by:{type:'person',id,identity_basis:'self_reported'}}),/Person collector ID cannot identify an agent/);
+ }
+ assert.throws(()=>setup().agent.collect('C1',{...evidence,collected_by:{type:'person',id:'Reviewer'}}),/identity_basis is required/);
+ assert.throws(()=>setup().agent.collect('C1',{...evidence,collected_by:{type:'person',id:'Reviewer',identity_basis:'authenticated'}}),/Only self_reported identity_basis is currently accepted/);
+ const stored=setup().agent.collect('C1',{...evidence,collected_by:{type:'person',id:'Reviewer 42',identity_basis:'self_reported'}}).evidence[0];
+ assert.deepEqual(stored.collected_by,{type:'person',id:'Reviewer 42',identity_basis:'self_reported'});
+});
+test('changing only the artifact content hash changes the assessment evidence digest',()=>{
+ const assessedDigest=hash=>{
+  const r=setup();r.agent.collect('C1',{...evidence,artifact_ref:{...artifact_ref,content_hash:{algorithm:'sha256',value:hash}}});
+  return r.reviewer.assess('C1','tested_pass',assessment).assessments[0].evidence_digest;
+ };
+ assert.notEqual(assessedDigest('a'.repeat(64)),assessedDigest('b'.repeat(64)));
 });
 test('evidence cannot inject status, cannot be empty or outside cycle',()=>{
  const r=setup();
