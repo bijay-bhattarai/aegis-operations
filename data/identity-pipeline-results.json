@@ -1,0 +1,85 @@
+{
+  "snapshot": {
+    "source": "data/entitlement-snapshot.csv",
+    "sha256": "f660e5b6c6787c0f54158840ccb00a120089d4c677bcea52c7fa1cce81d1239a",
+    "snapshot_at": "2026-08-23T20:40:22Z"
+  },
+  "scope": {
+    "users_in_scope": 20,
+    "users_excluded": [
+      "Alex Fontaine",
+      "Nina Sorensen"
+    ]
+  },
+  "answer_key": {
+    "recall": {
+      "value": 1.0,
+      "matched": 10,
+      "total": 10
+    },
+    "precision": {
+      "value": 1.0,
+      "matched": 10,
+      "total": 10
+    },
+    "severity_accuracy": {
+      "value": 1.0,
+      "matched": 10,
+      "total": 10
+    },
+    "control_cases": {
+      "result": "pass",
+      "passed": 2,
+      "total": 2,
+      "unexpected_findings": []
+    },
+    "missed": [],
+    "unexpected": []
+  },
+  "perturbation": {
+    "injected_defects": {
+      "result": "pass",
+      "detected": 5,
+      "total": 5,
+      "unexpected": [],
+      "cases": [
+        {
+          "rule_id": "R01",
+          "subject": "Andre Kalu",
+          "mutation": "add ROLE-Store-Associate",
+          "detected": true
+        },
+        {
+          "rule_id": "R02",
+          "subject": "Lena Kowalski",
+          "mutation": "add ROLE-IT-SysAdmin",
+          "detected": true
+        },
+        {
+          "rule_id": "R03",
+          "subject": "Jonah Bricker",
+          "mutation": "add ROLE-Finance-AP and ROLE-Finance-Controller",
+          "detected": true
+        },
+        {
+          "rule_id": "R04",
+          "subject": "Colin Pruitt",
+          "mutation": "disable account and add retained entitlement",
+          "detected": true
+        },
+        {
+          "rule_id": "R05",
+          "subject": "Marisol Vega",
+          "mutation": "remove ROLE-Store-Associate",
+          "detected": true
+        }
+      ]
+    },
+    "known_defect_removal": {
+      "result": "pass",
+      "removed_finding_id": "IAM-0004",
+      "cleared": true,
+      "side_effects": []
+    }
+  }
+}

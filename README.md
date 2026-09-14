@@ -33,12 +33,35 @@ Create a new PRIVATE repository named aegis-operations in your own account, with
 Then initialize Git in this folder and push to that repository using your normal authenticated Git tooling.
 Do not publish this repository publicly without reviewing the source and historical copy ledgers.
 
+<!-- identity-results:start -->
+## Identity pipeline results
+
+The checked-in results are read from [`data/identity-pipeline-results.json`](data/identity-pipeline-results.json). Reproduce the snapshot verification, five rules, answer-key scoring, perturbation checks, Aegis output, and generated seed module with:
+
+```sh
+python3 identity_agent.py
+```
+
+| Check | Result |
+|---|---:|
+| Recall | 1.00 (10/10) |
+| Precision | 1.00 (10/10) |
+| Severity accuracy | 1.00 (10/10) |
+| Control cases | PASS (2/2) |
+| Five injected perturbations | PASS (5/5) |
+| Known-defect removal isolation | PASS |
+
+These are separate measurements. The perturbation result is reported separately because answer-key performance on the tuning set alone is not independent evidence.
+<!-- identity-results:end -->
 ## Included
 
 - src/index.html: UI and demo records
 - src/action-model.mjs: AgentAction state machine and restricted ports
 - src/evidence-model.mjs: immutable evidence records and shared repository
 - src/control-model.mjs: control assessment model and coverage
+- identity_agent.py and identity_pipeline.py: deterministic Entra rules and the reproducible evidence-to-seed pipeline
+- data/entitlement-snapshot.csv, its pinned SHA-256, the answer key, generated Aegis findings, and separate score results
+- src/entra-finding-seeds.mjs: generated, committed runtime records; do not edit by hand
 - Three Node test suites
 - COPY_CHANGES.md and ASSESSMENT_CHANGES.md: before/after ledgers
 - Source diffs: historical reference, not current requirements

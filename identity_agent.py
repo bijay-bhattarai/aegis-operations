@@ -5,7 +5,7 @@ Deterministic rules only. No model involvement in any verdict.
 Input: entitlement snapshot CSV exported via Microsoft Graph.
 Output: findings in the shared Aegis finding schema.
 """
-import csv, io, json, hashlib
+import csv, io, hashlib
 from collections import defaultdict
 
 # ---------------------------------------------------------------- policy
@@ -146,7 +146,7 @@ def load(path):
     users = defaultdict(lambda: {"groups": set()})
     for r in rows:
         u = users[r["DisplayName"]]
-        u.update(name=r["DisplayName"], upn=r["UserPrincipalName"],
+        u.update(id=r["UserId"], name=r["DisplayName"], upn=r["UserPrincipalName"],
                  dept=r["Department"], title=r["JobTitle"],
                  enabled=r["AccountEnabled"] == "True",
                  snapshot=r["SnapshotDateUTC"])
@@ -156,9 +156,7 @@ def load(path):
         u["roles"] = {g for g in u["groups"] if g.startswith("ROLE-")}
     return rows, dict(users)
 
-def run(path):
-    rows, users = load(path)
-    digest = hashlib.sha256(open(path, "rb").read()).hexdigest()
+def evaluate(users, digest):
     findings, scoped, skipped = [], 0, []
     n = 0
     for name in sorted(users):
@@ -173,7 +171,7 @@ def run(path):
                     "finding_id": f"IAM-{n:04d}",
                     "rule_id": f["rule_id"],
                     "title": f["title"],
-                    "subject": {"display_name": u["name"], "upn": u["upn"],
+                    "subject": {"object_id": u["id"], "display_name": u["name"], "upn": u["upn"],
                                 "department": u["dept"], "title": u["title"],
                                 "privileged": bool(u["roles"] & PRIVILEGED_ROLES)},
                     "evidence": f["evidence"],
@@ -188,70 +186,12 @@ def run(path):
                 })
     return findings, scoped, skipped, digest
 
-# ---------------------------------------------------------------- scoring
-
-# Answer key from the published findings report.
-GROUND_TRUTH = {
-    "Devon Reyes":     "critical",
-    "Peter Nkemelu":   "high",
-    "Rashid Malik":    "high",
-    "Terrence Boyd":   "high",
-    "Owen Fitzgerald": "medium",
-    "Amara Osei":      "medium",
-    "Bea Lindqvist":   "medium",
-    "Camila Restrepo": "medium",
-    "Priya Raman":     "medium",
-    "Tomas Njoku":     "medium",
-}
-CONTROL_CASES = ["Ines Duarte", "Colin Pruitt"]
-
-def score(findings):
-    found = defaultdict(list)
-    for f in findings:
-        found[f["subject"]["display_name"]].append(f)
-
-    tp = [n for n in GROUND_TRUTH if n in found]
-    fn = [n for n in GROUND_TRUTH if n not in found]
-    fp = [n for n in found if n not in GROUND_TRUTH]
-    ctrl_fp = [n for n in CONTROL_CASES if n in found]
-
-    recall = len(tp) / len(GROUND_TRUTH)
-    precision = len(tp) / len(found) if found else 0.0
-    sev_match = [n for n in tp if any(f["severity"] == GROUND_TRUTH[n] for f in found[n])]
-    return dict(found=found, tp=tp, fn=fn, fp=fp, ctrl_fp=ctrl_fp,
-                recall=recall, precision=precision,
-                sev_accuracy=len(sev_match) / len(tp) if tp else 0.0,
-                sev_match=sev_match)
+def run(path):
+    _, users = load(path)
+    with open(path, "rb") as source:
+        digest = hashlib.sha256(source.read()).hexdigest()
+    return evaluate(users, digest)
 
 if __name__ == "__main__":
-    findings, scoped, skipped, digest = run("snap.csv")
-    s = score(findings)
-
-    print("=" * 68)
-    print("IDENTITY AGENT v1.0  —  scored against the published answer key")
-    print("=" * 68)
-    print(f"dataset sha256 : {digest[:32]}...")
-    print(f"users in scope : {scoped}   (excluded {len(skipped)}: {', '.join(skipped)})")
-    print(f"findings       : {len(findings)} across {len(s['found'])} users")
-    print()
-
-    print(f"{'USER':18} {'SEV':9} {'RULE':6} TITLE")
-    print("-" * 68)
-    order = {"critical": 0, "high": 1, "medium": 2, "low": 3}
-    for f in sorted(findings, key=lambda x: (order[x["severity"]], x["subject"]["display_name"])):
-        print(f"{f['subject']['display_name']:18} {f['severity']:9} {f['rule_id']:6} {f['title']}")
-
-    print()
-    print("=" * 68)
-    print("SCORE")
-    print("=" * 68)
-    print(f"recall            {s['recall']:.2f}   ({len(s['tp'])}/{len(GROUND_TRUTH)} known defects detected)")
-    print(f"precision         {s['precision']:.2f}   ({len(s['tp'])}/{len(s['found'])} flagged users are true defects)")
-    print(f"severity accuracy {s['sev_accuracy']:.2f}   ({len(s['sev_match'])}/{len(s['tp'])} match the reported severity)")
-    print(f"control cases     {'PASS' if not s['ctrl_fp'] else 'FAIL'}   ({', '.join(CONTROL_CASES)} correctly produced no finding)"
-          if not s["ctrl_fp"] else f"control cases     FAIL   flagged: {s['ctrl_fp']}")
-    if s["fn"]: print(f"missed            {s['fn']}")
-    if s["fp"]: print(f"false positives   {s['fp']}")
-
-    json.dump(findings, open("findings.json", "w"), indent=2)
-    print("\nfindings.json written")
+    from identity_pipeline import main
+    raise SystemExit(main())

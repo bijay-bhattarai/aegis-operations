@@ -2,6 +2,8 @@ import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import crypto from 'node:crypto';
+import path from 'node:path';
+import {spawnSync} from 'node:child_process';
 import {
   FindingType,FindingState,FindingDisposition,FindingEventType,FindingActorType,FindingSubjectType,Severity,
   DEFAULT_SEVERITY_POLICIES,DEFAULT_SLA_POLICIES,createFindingRepository,findingIndicators
@@ -390,15 +392,15 @@ test('dashboard findings use the verified Entra snapshot and expected real SLA b
 });
 
 test('Entra finding seeds preserve supplied IDs, titles and NIST references while computing severity',()=>{
- const source=JSON.parse(fs.readFileSync('findings.json','utf8')),{findingRepo,as_of}=createDemoOverview();
+ const source=JSON.parse(fs.readFileSync('data/entra-findings.json','utf8')).findings,{findingRepo,as_of}=createDemoOverview();
  assert.equal(source.length,10);assert.equal(ENTRA_FINDING_SEEDS.length,10);
  const sourceById=new Map(source.map(item=>[item.finding_id,item]));
  for(const seed of ENTRA_FINDING_SEEDS){
    const supplied=sourceById.get(seed.finding_id),projected=findingRepo.agent.get(seed.finding_id,as_of);
-   assert.ok(supplied);assert.equal(seed.title,supplied.title);assert.deepEqual(seed.control_refs,supplied.control_refs.nist_800_53);
-   assert.equal(seed.subject.label,supplied.subject.display_name);assert.equal(seed.subject.details.principal_name,supplied.subject.upn);
-   assert.equal(seed.subject.details.department,supplied.subject.department);assert.equal(seed.subject.details.job_title,supplied.subject.title);assert.equal(seed.subject.details.privileged,supplied.subject.privileged);
-   assert.equal(projected.severity,supplied.severity);assert.equal(projected.created_at,'2026-08-23T20:40:22Z');
+   assert.ok(supplied);assert.equal(seed.title,supplied.title);assert.deepEqual(seed.control_refs,supplied.control_refs);
+   assert.deepEqual(seed.subject,supplied.subject);assert.deepEqual(seed.evidence_lines,supplied.evidence_lines);
+   assert.equal(projected.severity,seed.finding_id==='IAM-0004'?'critical':(['IAM-0006','IAM-0008','IAM-0009'].includes(seed.finding_id)?'high':'medium'));
+   assert.equal(projected.created_at,'2026-08-23T20:40:22Z');
    assert.deepEqual(projected.evidence_ids,['ENTRA-SNAPSHOT-2026-08-23']);assert.equal(projected.finding_type,'identity');
    assert.equal(Object.hasOwn(seed.severity_input,'modifiers'),false);
  }
@@ -406,7 +408,7 @@ test('Entra finding seeds preserve supplied IDs, titles and NIST references whil
 });
 
 test('Entra subjects use snapshot object IDs and keep identity attributes out of rule facts',()=>{
- const rows=fs.readFileSync('snap.csv','utf8').split(/\r?\n/),header=rows[0].replace(/^\uFEFF?"|"$/g,'').split('\",\"');
+ const rows=fs.readFileSync('data/entitlement-snapshot.csv','utf8').split(/\r?\n/),header=rows[0].replace(/^\uFEFF?"|"$/g,'').split('\",\"');
  const index=Object.fromEntries(header.map((name,position)=>[name,position])),idByUpn=new Map();
  for(const row of rows.slice(1)){
    if(!row)continue;
@@ -429,12 +431,45 @@ test('finding drawer renders subject identity and structured evidence keys and v
 });
 
 test('Entra snapshot evidence records the supplied artifact hash byte-for-byte',()=>{
- const actual=crypto.createHash('sha256').update(fs.readFileSync('snap.csv')).digest('hex');
+ const actual=crypto.createHash('sha256').update(fs.readFileSync('data/entitlement-snapshot.csv')).digest('hex');
  assert.equal(actual,ENTRA_SNAPSHOT.artifact_ref.content_hash.value);
  assert.equal(ENTRA_SNAPSHOT.collected_at,'2026-08-23T20:40:22Z');
  assert.equal(ENTRA_SNAPSHOT.source,'Microsoft Entra ID');
  assert.deepEqual(ENTRA_SNAPSHOT.collected_by,{type:'agent',id:'identity'});
  assert.equal(ENTRA_SNAPSHOT.artifact_ref.verification_status,'unverified');
+});
+
+test('generated Entra artifacts cannot drift from the verified snapshot pipeline',()=>{
+ const candidates=[
+   process.env.PYTHON,
+   path.join(process.cwd(),'.venv',process.platform==='win32'?'Scripts/python.exe':'bin/python'),
+   'python3','python','py',
+   process.env.USERPROFILE&&path.join(process.env.USERPROFILE,'.cache','codex-runtimes','codex-primary-runtime','dependencies','python','python.exe')
+ ].filter(Boolean);
+ let result;
+ for(const command of candidates){
+   const args=/^py(?:\.exe)?$/i.test(path.basename(command))?['-3','identity_pipeline.py','--check']:['identity_pipeline.py','--check'];
+   result=spawnSync(command,args,{cwd:process.cwd(),encoding:'utf8'});
+   if(!result.error||result.error.code!=='ENOENT')break;
+ }
+ assert.ok(result&&!result.error,'Python 3 is required to verify generated Entra artifacts');
+ assert.equal(result.status,0,`${result.stdout||''}${result.stderr||''}`);
+ assert.match(result.stdout,/Identity pipeline check passed/);
+});
+
+test('identity pipeline reports answer-key and perturbation evidence separately',()=>{
+ const results=JSON.parse(fs.readFileSync('data/identity-pipeline-results.json','utf8'));
+ assert.deepEqual(results.answer_key.recall,{value:1,matched:10,total:10});
+ assert.deepEqual(results.answer_key.precision,{value:1,matched:10,total:10});
+ assert.deepEqual(results.answer_key.severity_accuracy,{value:1,matched:10,total:10});
+ assert.deepEqual(results.answer_key.control_cases,{result:'pass',passed:2,total:2,unexpected_findings:[]});
+ assert.equal(results.perturbation.injected_defects.result,'pass');
+ assert.equal(results.perturbation.injected_defects.detected,5);
+ assert.deepEqual(results.perturbation.known_defect_removal,{result:'pass',removed_finding_id:'IAM-0004',cleared:true,side_effects:[]});
+ const generated=fs.readFileSync('src/entra-finding-seeds.mjs','utf8');
+ assert.match(generated,/^\/\/ GENERATED FILE\. DO NOT EDIT\./);
+ assert.match(generated,/\/\/ Source: data\/entitlement-snapshot\.csv/);
+ assert.match(generated,new RegExp(`// SHA-256: ${ENTRA_SNAPSHOT.artifact_ref.content_hash.value}`));
 });
 
 test('finding provenance is rendered from the shared evidence record',()=>{

@@ -1,0 +1,15 @@
+{
+  "known_defects": [
+    {"finding_id":"IAM-0001","subject":"Amara Osei","rule_id":"R05","title":"Missing expected Store Associate role","severity":"medium"},
+    {"finding_id":"IAM-0002","subject":"Bea Lindqvist","rule_id":"R05","title":"Missing expected HR Coordinator role","severity":"medium"},
+    {"finding_id":"IAM-0003","subject":"Camila Restrepo","rule_id":"R05","title":"Missing expected Finance Controller role","severity":"medium"},
+    {"finding_id":"IAM-0004","subject":"Devon Reyes","rule_id":"R01","title":"Store Operations user holds ROLE-IT-SysAdmin","severity":"critical"},
+    {"finding_id":"IAM-0005","subject":"Owen Fitzgerald","rule_id":"R02","title":"Retains both ROLE-IT-Helpdesk and ROLE-IT-SysAdmin","severity":"medium"},
+    {"finding_id":"IAM-0006","subject":"Peter Nkemelu","rule_id":"R03","title":"Holds toxic pair ROLE-Finance-AP and ROLE-Finance-Controller","severity":"high"},
+    {"finding_id":"IAM-0007","subject":"Priya Raman","rule_id":"R05","title":"Missing expected IT SysAdmin role","severity":"medium"},
+    {"finding_id":"IAM-0008","subject":"Rashid Malik","rule_id":"R04","title":"Disabled account retains group entitlements","severity":"high"},
+    {"finding_id":"IAM-0009","subject":"Terrence Boyd","rule_id":"R01","title":"Finance user holds ROLE-Store-Associate","severity":"high"},
+    {"finding_id":"IAM-0010","subject":"Tomas Njoku","rule_id":"R05","title":"Missing expected HR Coordinator role","severity":"medium"}
+  ],
+  "control_cases": ["Ines Duarte", "Colin Pruitt"]
+}
