@@ -19,7 +19,7 @@ Read HANDOFF.md before changing the application.
 
 - Run `node --test action-model.test.mjs control-model.test.mjs finding-model.test.mjs`.
 - src/ is authored source with no build step. The sole generated runtime input is `src/entra-finding-seeds.mjs`; reproduce it with `python3 identity_agent.py` and never hand-edit it. No other agent should treat src/ as generated output.
-- Update copy ledgers for copy changes. Historical diff text is not active application copy.
+- Update copy ledgers in `docs/history/` for copy changes. Historical diff text is not active application copy.
 - This project has no deployment pipeline. No agent may deploy, publish, or host it.
 - Do not provision paid services, introduce external writers or connect real customer data without explicit authorization.
 - Never commit API keys, Git tokens, .env values, customer logs or local credentials.

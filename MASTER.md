@@ -140,7 +140,9 @@ Overview, Approvals, Findings, Controls, Audit.
 
 **Real.** Ten identity findings derived from an actual Microsoft Entra ID
 entitlement export, snapshot `2026-08-23T20:40:22Z`, SHA-256 pinned and verified
-on every pipeline run. Every subject is a genuine Entra object ID. The rule
+on every pipeline run. The tenant and export were real; the committed subject
+identifiers are sanitized sequential placeholders on `contoso.onmicrosoft.com`
+that were substituted while preparing the export. The rule
 engine scores 1.00 recall, 1.00 precision, and 1.00 severity accuracy against a
 published answer key, passes both control cases, detects 5 of 5 defects it was
 never written against, and clears a removed defect with no side effects. The

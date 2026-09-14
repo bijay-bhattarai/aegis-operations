@@ -1,6 +1,6 @@
 # Aegis Operations
 
-Aegis Operations is a local prototype for supervised security operations. Agents identify observations and propose actions; human reviewers assess controls and decide whether to approve or reject proposals. The application records those decisions and external execution attestations but never performs a security action. Its ten identity findings come from a hash-verified Microsoft Entra ID entitlement export, and their severity is computed from a versioned policy rather than asserted by the rule engine.
+Aegis Operations is a local prototype for supervised security operations. Agents identify observations and propose actions; human reviewers assess controls and decide whether to approve or reject proposals. The application records those decisions and external execution attestations but never performs a security action. Its ten identity findings come from a hash-verified export prepared from a real Microsoft Entra ID lab tenant; the committed identifiers are sanitized sequential placeholders on `contoso.onmicrosoft.com`, and severity is computed from a versioned policy rather than asserted by the rule engine.
 
 <!-- identity-results:start -->
 ## Identity pipeline results
@@ -49,7 +49,8 @@ Open http://127.0.0.1:8000 in a browser. Use HTTP because the application uses E
 - `data/entitlement-snapshot.csv`: the source export, accompanied by its pinned SHA-256, answer key, generated Aegis findings, and separate score results
 - `src/entra-finding-seeds.mjs`: generated and committed runtime records; regenerate it through the pipeline rather than editing it
 - `*.test.mjs`: Node test suites covering the domain models, generated-data drift, and interface constraints
-- `COPY_CHANGES.md`, `ASSESSMENT_CHANGES.md`, `AGENTS.md`, and `HANDOFF.md`: copy history, project rules, and implementation limitations
+- `docs/history/`: historical copy and assessment ledgers with their source diffs
+- `AGENTS.md`, `MASTER.md`, and `HANDOFF.md`: project rules, charter, and implementation limitations
 
 ## What this is not
 

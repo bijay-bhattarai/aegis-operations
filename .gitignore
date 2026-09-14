@@ -2,8 +2,9 @@
 .env.*
 !.env.example
 node_modules/
-__pycache__/
+**/__pycache__/
 *.py[cod]
+.openai/
 .DS_Store
 *.log
 .sites-runtime/
