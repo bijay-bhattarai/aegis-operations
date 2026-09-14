@@ -1,0 +1,887 @@
+--- before/index.html
++++ after/index.html
+@@ -1,413 +1,470 @@
+-<!doctype html>
+-<html lang="en">
+-<head>
+-  <meta charset="utf-8" />
+-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'none'; form-action 'none'; object-src 'none'; base-uri 'none'" />
+-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+-  <meta name="theme-color" content="#07100f" />
+-  <meta name="description" content="Aegis Operations — supervised security operations. Agents propose; humans decide. Execution is recorded, never performed." />
+-  <title>Aegis Operations</title>
+-  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cpath fill='%2307100f' d='M0 0h64v64H0z'/%3E%3Cpath fill='none' stroke='%236ef2c5' stroke-width='6' stroke-linejoin='round' d='M32 8 53 17v14c0 13-8 21-21 27C19 52 11 44 11 31V17z'/%3E%3Cpath fill='none' stroke='%23ffffff' stroke-width='5' stroke-linecap='round' d='m22 33 7 7 14-17'/%3E%3C/svg%3E" />
+-  <style>
+-    :root {
+-      color-scheme: dark;
+-      --bg: #07100f;
+-      --panel: #0c1715;
+-      --panel-2: #101d1b;
+-      --line: #213431;
+-      --line-strong: #35504b;
+-      --text: #ecf6f3;
+-      --muted: #8ca39e;
+-      --quiet: #60736f;
+-      --mint: #6ef2c5;
+-      --mint-dim: #163f35;
+-      --cyan: #69d7f1;
+-      --amber: #f2bb68;
+-      --red: #f17777;
+-      --violet: #9c8cff;
+-      --shadow: 0 24px 70px rgba(0,0,0,.38);
+-      --radius: 16px;
+-      font-family: Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+-    }
+-    * { box-sizing: border-box; }
+-    html { background: var(--bg); }
+-    body { margin: 0; min-height: 100vh; background: radial-gradient(circle at 68% -20%, rgba(50,128,105,.17), transparent 34rem), var(--bg); color: var(--text); }
+-    button { font: inherit; }
+-    button, [role="button"] { -webkit-tap-highlight-color: transparent; }
+-    .app { min-height: 100vh; display: grid; grid-template-columns: 228px minmax(0,1fr); }
+-    .sidebar { position: sticky; top: 0; height: 100vh; border-right: 1px solid var(--line); padding: 24px 16px; display: flex; flex-direction: column; background: rgba(7,16,15,.88); backdrop-filter: blur(18px); z-index: 4; }
+-    .brand { display: flex; align-items: center; gap: 11px; padding: 0 8px 25px; }
+-    .mark { width: 32px; height: 36px; display: grid; place-items: center; color: var(--mint); }
+-    .mark svg { width: 100%; height: 100%; }
+-    .brand strong { font-size: .95rem; letter-spacing: -.01em; }
+-    .brand small { color: var(--muted); display: block; margin-top: 2px; font-size: .72rem; letter-spacing: .04em; }
+-    .nav-label { padding: 6px 10px 8px; color: var(--quiet); font: 700 .66rem/1 ui-monospace, SFMono-Regular, Menlo, monospace; letter-spacing: .12em; text-transform: uppercase; }
+-    .nav { display: grid; gap: 4px; }
+-    .nav button { width: 100%; border: 0; background: transparent; color: var(--muted); border-radius: 10px; padding: 10px 11px; display: flex; align-items: center; gap: 10px; cursor: pointer; text-align: left; font-weight: 650; font-size: .88rem; }
+-    .nav button:hover { background: rgba(255,255,255,.035); color: var(--text); }
+-    .nav button.active { background: var(--mint-dim); color: var(--mint); }
+-    .nav-icon { width: 18px; height: 18px; display: grid; place-items: center; font-family: ui-monospace, monospace; font-size: .72rem; border: 1px solid currentColor; border-radius: 5px; opacity: .9; }
+-    .side-bottom { margin-top: auto; }
+-    .system-card { border: 1px solid var(--line); border-radius: 12px; padding: 12px; background: rgba(255,255,255,.02); }
+-    .system-row { display:flex; gap: 8px; align-items:center; font-size: .78rem; font-weight: 700; }
+-    .pulse { width: 8px; height: 8px; border-radius: 50%; background: var(--mint); box-shadow: 0 0 0 4px rgba(110,242,197,.09), 0 0 14px rgba(110,242,197,.75); }
+-    .system-card p { color: var(--muted); font-size: .72rem; line-height: 1.45; margin: 8px 0 0; }
+-    main { min-width: 0; padding: 0 28px 38px; }
+-    .topbar { height: 76px; display:flex; align-items:center; justify-content:space-between; border-bottom: 1px solid var(--line); margin-bottom: 25px; }
+-    .eyebrow { color: var(--muted); font-size: .72rem; font-weight: 800; letter-spacing: .11em; text-transform: uppercase; }
+-    .topbar h1 { font-size: 1.1rem; margin: 4px 0 0; letter-spacing: -.02em; }
+-    .top-actions { display: flex; align-items:center; gap: 10px; }
+-    .scope { color: var(--muted); border: 1px solid var(--line); background: var(--panel); border-radius: 999px; padding: 8px 12px; font-size: .78rem; }
+-    .icon-btn { width: 36px; height: 36px; border: 1px solid var(--line); background: var(--panel); color: var(--muted); border-radius: 10px; cursor:pointer; }
+-    .icon-btn:hover { border-color: var(--line-strong); color: var(--text); }
+-    .grid { display: grid; grid-template-columns: minmax(0, 1.65fr) minmax(300px, .75fr); gap: 18px; }
+-    .hero { border: 1px solid var(--line); border-radius: var(--radius); background: linear-gradient(135deg, rgba(110,242,197,.06), transparent 52%), var(--panel); padding: 22px; position: relative; overflow:hidden; box-shadow: var(--shadow); }
+-    .hero::after { content:""; position:absolute; width:220px; height:220px; right:-96px; top:-105px; border: 1px solid rgba(110,242,197,.18); border-radius:50%; box-shadow: 0 0 0 32px rgba(110,242,197,.018), 0 0 0 64px rgba(110,242,197,.012); }
+-    .hero-top { display:flex; justify-content:space-between; align-items:start; gap: 16px; position:relative; z-index:1; }
+-    .hero h2 { font-size: clamp(1.4rem, 2vw, 2rem); line-height: 1.12; letter-spacing: -.04em; max-width: 620px; margin: 8px 0 7px; }
+-    .hero p { margin: 0; max-width: 640px; color: var(--muted); line-height:1.55; font-size:.9rem; }
+-    .trust { border: 1px solid rgba(110,242,197,.25); background: rgba(110,242,197,.07); color: var(--mint); padding: 8px 10px; border-radius: 9px; white-space:nowrap; font: 700 .7rem/1 ui-monospace, monospace; letter-spacing:.04em; }
+-    .metric-row { display:grid; grid-template-columns: repeat(4,1fr); gap: 10px; margin-top: 24px; position:relative; z-index:1; }
+-    .metric { border-top: 1px solid var(--line); padding-top: 13px; }
+-    .metric-value { font: 650 1.45rem/1 ui-monospace, SFMono-Regular, Menlo, monospace; letter-spacing:-.05em; }
+-    .metric-label { color: var(--muted); margin-top:7px; font-size:.72rem; line-height:1.25; }
+-    .metric-value.mint { color:var(--mint); }
+-    .metric-value.amber { color:var(--amber); }
+-    .metric-value.red { color:var(--red); }
+-    .panel { border:1px solid var(--line); border-radius:var(--radius); background:var(--panel); }
+-    .panel-head { display:flex; align-items:center; justify-content:space-between; padding: 17px 18px; border-bottom:1px solid var(--line); }
+-    .panel-head h3 { margin:0; font-size:.92rem; letter-spacing:-.01em; }
+-    .panel-head span { color:var(--muted); font-size:.72rem; }
+-    .activity-panel { grid-column:2; grid-row:1 / span 2; overflow:hidden; }
+-    .activity-list { padding: 6px 16px 2px; }
+-    .activity { display:grid; grid-template-columns: 14px 1fr; gap:10px; padding:13px 0; border-bottom:1px solid rgba(33,52,49,.7); }
+-    .activity:last-child { border-bottom:0; }
+-    .trail { position:relative; display:flex; justify-content:center; }
+-    .trail::after { content:""; position:absolute; width:1px; top:11px; bottom:-24px; background:var(--line); }
+-    .activity:last-child .trail::after { display:none; }
+-    .dot { width:7px; height:7px; margin-top:5px; border-radius:50%; background:var(--cyan); position:relative; z-index:1; box-shadow:0 0 0 4px var(--panel); }
+-    .dot.mint{background:var(--mint)} .dot.amber{background:var(--amber)} .dot.violet{background:var(--violet)} .dot.red{background:var(--red)}
+-    .activity h4 { margin:0 0 4px; font-size:.79rem; line-height:1.35; }
+-    .activity p { margin:0; color:var(--muted); font-size:.7rem; line-height:1.45; }
+-    .activity time { display:block; color:var(--quiet); font: .64rem ui-monospace, monospace; margin-top:6px; }
+-    .agents-panel { overflow:hidden; }
+-    .agent-list { display:grid; grid-template-columns:repeat(5,1fr); }
+-    .agent { border:0; border-right:1px solid var(--line); background:transparent; color:var(--text); padding:16px 13px; text-align:left; cursor:pointer; min-width:0; }
+-    .agent:last-child { border-right:0; }
+-    .agent:hover { background:rgba(255,255,255,.025); }
+-    .agent.active { background:linear-gradient(180deg, rgba(110,242,197,.1), transparent); box-shadow: inset 0 2px var(--mint); }
+-    .agent-badge { width:31px; height:31px; border:1px solid var(--line-strong); border-radius:9px; display:grid; place-items:center; color:var(--mint); font:700 .69rem ui-monospace,monospace; margin-bottom:20px; }
+-    .agent-name { font-weight:800; font-size:.78rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+-    .agent-task { color:var(--muted); font-size:.66rem; margin-top:5px; line-height:1.35; height:2.7em; overflow:hidden; }
+-    .agent-status { margin-top:14px; display:flex; align-items:center; gap:6px; color:var(--mint); font:700 .62rem ui-monospace,monospace; text-transform:uppercase; }
+-    .agent-status::before { content:""; width:6px; height:6px; background:currentColor; border-radius:50%; }
+-    .agent-status.review { color:var(--amber); }
+-    .agent-detail { display:grid; grid-template-columns:minmax(0,1fr) 230px; gap:14px; border-top:1px solid var(--line); padding:17px 18px; }
+-    .agent-detail h4 { margin:0 0 6px; font-size:.9rem; }
+-    .agent-detail p { margin:0; color:var(--muted); line-height:1.5; font-size:.78rem; }
+-    .procedure { border-left:2px solid var(--mint); padding-left:12px; }
+-    .procedure small { display:block; color:var(--mint); font:700 .65rem ui-monospace,monospace; margin-bottom:5px; text-transform:uppercase; }
+-    .frameworks { display:flex; flex-wrap:wrap; gap:6px; align-content:start; }
+-    .chip { border:1px solid var(--line); background:var(--panel-2); color:#b4c7c2; border-radius:6px; padding:6px 7px; font:600 .61rem ui-monospace,monospace; }
+-    .cases-panel { margin-top:18px; overflow:hidden; }
+-    .case-row { display:grid; grid-template-columns:105px minmax(260px,1.5fr) 110px 120px 96px; gap:14px; align-items:center; border-bottom:1px solid var(--line); padding:13px 18px; cursor:pointer; }
+-    .case-row:last-child { border-bottom:0; }
+-    .case-row:not(.case-header):hover { background:rgba(255,255,255,.022); }
+-    .case-header { color:var(--quiet); font:700 .62rem ui-monospace,monospace; text-transform:uppercase; letter-spacing:.06em; cursor:default; padding-top:10px; padding-bottom:10px; }
+-    .case-id { color:var(--muted); font:700 .68rem ui-monospace,monospace; }
+-    .case-title { font-weight:750; font-size:.78rem; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+-    .severity { display:inline-flex; align-items:center; gap:6px; font:700 .66rem ui-monospace,monospace; text-transform:uppercase; }
+-    .severity::before { content:""; width:6px; height:6px; border-radius:50%; background:currentColor; }
+-    .severity.critical{color:var(--red)} .severity.high{color:var(--amber)} .severity.medium{color:var(--cyan)}
+-    .confidence { font:700 .72rem ui-monospace,monospace; }
+-    .state { color:var(--muted); font-size:.7rem; }
+-    .governance { margin-top:18px; display:grid; grid-template-columns:minmax(0,1fr) auto; align-items:center; gap:18px; padding:17px 18px; }
+-    .gov-title { display:flex; gap:11px; align-items:flex-start; }
+-    .gov-shield { width:31px;height:31px;display:grid;place-items:center;border:1px solid rgba(110,242,197,.25);border-radius:9px;color:var(--mint);background:rgba(110,242,197,.05); }
+-    .gov-title h3 { margin:0 0 4px; font-size:.85rem; }
+-    .gov-title p { margin:0; color:var(--muted); font-size:.72rem; line-height:1.4; }
+-    .modes { display:flex; gap:5px; background:#07100f; border:1px solid var(--line); border-radius:10px; padding:4px; }
+-    .modes button { border:0; background:transparent; color:var(--muted); border-radius:7px; padding:8px 10px; cursor:pointer; font-size:.68rem; font-weight:750; }
+-    .modes button.active { background:var(--mint-dim); color:var(--mint); }
+-    .drawer { border:1px solid var(--line-strong); width:min(680px, calc(100vw - 24px)); max-height:calc(100vh - 40px); padding:0; border-radius:18px; background:#0b1513; color:var(--text); box-shadow:0 30px 100px rgba(0,0,0,.65); }
+-    .drawer::backdrop { background:rgba(0,0,0,.68); backdrop-filter:blur(4px); }
+-    .drawer-head { padding:20px 22px 16px; border-bottom:1px solid var(--line); display:flex; justify-content:space-between; gap:16px; }
+-    .drawer h2 { margin:5px 0 0; font-size:1.2rem; letter-spacing:-.025em; }
+-    .close { border:1px solid var(--line); width:34px;height:34px;border-radius:9px;background:var(--panel);color:var(--muted);cursor:pointer; }
+-    .drawer-body { padding:20px 22px 22px; overflow:auto; }
+-    .verdict { display:grid;grid-template-columns:1fr auto;align-items:center;gap:14px;border:1px solid rgba(241,119,119,.22);background:rgba(241,119,119,.055);border-radius:12px;padding:14px 15px; }
+-    .verdict strong { font-size:.84rem; }
+-    .verdict p { margin:5px 0 0;color:var(--muted);font-size:.72rem;line-height:1.45; }
+-    .score { color:var(--red);font:750 1.35rem ui-monospace,monospace; }
+-    .evidence { margin:18px 0; display:grid; gap:8px; }
+-    .evidence-item { display:grid;grid-template-columns:24px 1fr auto;gap:9px;align-items:start;border:1px solid var(--line);border-radius:10px;padding:10px 11px; }
+-    .check { color:var(--mint);font-weight:900; }
+-    .evidence-item strong { font-size:.74rem;display:block; }
+-    .evidence-item span { color:var(--muted);font-size:.68rem;line-height:1.4; }
+-    .evidence-item code { color:var(--quiet);font-size:.61rem; }
+-    .audit-grid { display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:18px; }
+-    .audit { border-top:1px solid var(--line);padding-top:9px; }
+-    .audit small { color:var(--quiet);font:700 .59rem ui-monospace,monospace;text-transform:uppercase;display:block;margin-bottom:5px; }
+-    .audit span { font-size:.7rem;color:#b7c9c5; }
+-    .action-box { border:1px solid var(--line);border-radius:12px;padding:14px; }
+-    .action-box h3{margin:0 0 5px;font-size:.82rem}.action-box p{margin:0;color:var(--muted);font-size:.7rem;line-height:1.45}
+-    .action-buttons { display:flex;gap:8px;margin-top:13px; }
+-    .btn { border:1px solid var(--line);border-radius:9px;padding:9px 12px;font-weight:750;font-size:.72rem;cursor:pointer;background:var(--panel-2);color:var(--text); }
+-    .btn.primary { background:var(--mint);border-color:var(--mint);color:#06110e; }
+-    .btn:hover { transform:translateY(-1px); }
+-    .toast { position:fixed;right:24px;bottom:24px;background:#e9f8f3;color:#07100f;padding:11px 14px;border-radius:10px;font-weight:800;font-size:.75rem;box-shadow:var(--shadow);opacity:0;transform:translateY(8px);pointer-events:none;transition:.2s ease;z-index:20; }
+-    .toast.show { opacity:1;transform:translateY(0); }
+-    .mobile-menu { display:none; }
+-    @media (max-width: 1060px) {
+-      .app { grid-template-columns:76px minmax(0,1fr); }
+-      .brand-copy,.nav button span:not(.nav-icon),.nav-label,.system-card p,.system-row span:last-child { display:none; }
+-      .sidebar{padding-inline:12px}.brand{justify-content:center;padding-inline:0}.nav button{justify-content:center;padding:11px}.system-card{display:grid;place-items:center;padding:12px 8px}
+-      .grid{grid-template-columns:1fr}.activity-panel{grid-column:1;grid-row:auto}.agent-list{grid-template-columns:repeat(5,minmax(115px,1fr));overflow-x:auto}.activity-list{display:grid;grid-template-columns:repeat(2,1fr);gap:0 14px}.activity:nth-child(5){display:none}
+-    }
+-    @media (max-width: 720px) {
+-      .app{display:block}.sidebar{position:fixed;height:auto;left:10px;right:10px;bottom:10px;top:auto;border:1px solid var(--line);border-radius:14px;padding:6px;background:rgba(7,16,15,.96)}
+-      .brand,.nav-label,.side-bottom{display:none}.nav{grid-template-columns:repeat(6,1fr);gap:2px}.nav button{padding:9px 4px}.nav button span:not(.nav-icon){display:none}.nav-icon{border:0;font-size:.65rem}
+-      main{padding:0 14px 90px}.topbar{height:66px;margin-bottom:14px}.scope{display:none}.hero{padding:17px}.hero-top{display:block}.trust{display:inline-block;margin-top:14px}.metric-row{grid-template-columns:repeat(2,1fr);gap:14px}.metric-value{font-size:1.2rem}
+-      .activity-list{display:block}.activity:nth-child(5){display:grid}.agent-detail{grid-template-columns:1fr}.frameworks{margin-top:4px}.case-row{grid-template-columns:86px 1fr 76px;padding:12px 14px}.case-row>*:nth-child(4),.case-row>*:nth-child(5){display:none}.case-header{display:none}.governance{grid-template-columns:1fr}.modes{overflow:auto}.modes button{flex:1}.activity-panel{display:none}.topbar h1{font-size:1rem}.eyebrow{font-size:.62rem}.agent-list{grid-template-columns:repeat(5,130px)}
+-      .audit-grid{grid-template-columns:1fr}.action-buttons{flex-direction:column}.btn{width:100%}.toast{left:14px;right:14px;bottom:80px;text-align:center}
+-    }
+-    @media (prefers-reduced-motion:reduce){*{scroll-behavior:auto!important;transition:none!important}.btn:hover{transform:none}}
+-
+-    .status-badge {display:inline-block;border:1px solid var(--line-strong);border-radius:6px;padding:4px 7px;color:var(--amber);font-size:.875rem; margin-top:8px}
+-    .activity a{color:var(--mint);font-size:.875rem}
+-    #action-record{white-space:pre-wrap;overflow-wrap:anywhere;font-size:.875rem}
+-    #action-dialog label{display:block;margin:12px 0;font-size:1rem}
+-    #action-dialog input:not([type=checkbox]),#action-dialog textarea{display:block;width:100%;padding:10px;background:var(--panel);color:var(--text);border:1px solid var(--line-strong);border-radius:7px;font:inherit}
+-    button:disabled{opacity:.45;cursor:not-allowed}
+-    .state{overflow-wrap:anywhere}
+-    @media(max-width:1060px){.activity:nth-child(5){display:grid}}
+-    @media(max-width:720px){.activity-panel{display:block}}
+-  </style>
+-</head>
+-<body>
+-  <div class="app">
+-    <aside class="sidebar" aria-label="Primary navigation">
+-      <div class="brand">
+-        <div class="mark" aria-hidden="true"><svg viewBox="0 0 36 42" fill="none"><path d="M18 2 33 8.5v10c0 9.5-5.8 15.5-15 20C8.8 34 3 28 3 18.5v-10L18 2Z" stroke="currentColor" stroke-width="2"/><path d="m10.5 20 5 5 10-12" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+-        <div class="brand-copy"><strong>Aegis Operations</strong><small>Supervised security operations.</small></div>
+-      </div>
+-      <div class="nav-label">Workspace</div>
+-      <nav class="nav">
+-        <button class="active"><span class="nav-icon">OV</span><span>Overview</span></button>
+-        <button data-scroll="agents"><span class="nav-icon">AI</span><span>AI workforce</span></button>
+-        <button data-open-case="INC-2841"><span class="nav-icon">IN</span><span>Incidents</span></button>
+-        <button data-scroll="cases"><span class="nav-icon">VU</span><span>Exposure</span></button>
+-        <button data-scroll="governance"><span class="nav-icon">ID</span><span>Identity</span></button>
+-        <button data-scroll="governance"><span class="nav-icon">GV</span><span>Governance</span></button>
+-      </nav>
+-      <div class="side-bottom">
+-        <div class="system-card"><div class="system-row"><span class="pulse"></span><span>Proposal-only model</span></div><p>5 agents · no execution capability</p></div>
+-      </div>
+-    </aside>
+-
+-    <main>
+-      <header class="topbar">
+-        <div><div class="eyebrow">Security command center</div><h1>Good evening, Bijay.</h1></div>
+-        <div class="top-actions"><span class="scope">Acme Cloud · Session-only demo</span><button class="icon-btn" aria-label="View notifications">3</button></div>
+-      </header>
+-
+-      <div class="grid">
+-        <section class="hero" aria-labelledby="overview-title">
+-          <div class="hero-top">
+-            <div><div class="eyebrow">Operational posture · demo</div><h2 id="overview-title">Every agent action requires human review.</h2><p>Five specialized agents analyzed evidence and proposed recommendations. No external-system writes are possible.</p></div>
+-            <div class="trust">87 / 100 POSTURE</div>
+-          </div>
+-          <div class="metric-row">
+-            <div class="metric"><div class="metric-value red">3</div><div class="metric-label">Active incidents</div></div>
+-            <div class="metric"><div class="metric-value amber">12</div><div class="metric-label">Critical exposures</div></div>
+-            <div class="metric"><div class="metric-value mint">326</div><div class="metric-label">Alerts analyzed</div></div>
+-            <div class="metric"><div class="metric-value">99.2%</div><div class="metric-label">Procedure compliance</div></div>
+-          </div>
+-        </section>
+-
+-        <aside class="panel activity-panel" aria-labelledby="activity-title">
+-          <div class="panel-head"><h3 id="activity-title">Agent proposals</h3><span>Demo records</span></div>
+-          <div class="activity-list" id="action-feed"></div></aside>
+-
+-        <section class="panel agents-panel" id="agents" aria-labelledby="agents-title">
+-          <div class="panel-head"><h3 id="agents-title">AI security workforce</h3><span>5 of 5 proposal-only</span></div>
+-          <div class="agent-list" role="tablist" aria-label="Security agents">
+-            <button class="agent active" role="tab" aria-selected="true" data-agent="soc"><span class="agent-badge">SO</span><div class="agent-name">SOC Agent</div><div class="agent-task">Analyzed 7 security alerts</div><div class="agent-status">Proposal only</div></button>
+-            <button class="agent" role="tab" aria-selected="false" data-agent="vuln"><span class="agent-badge">VM</span><div class="agent-name">Vulnerability</div><div class="agent-task">Prioritized 42 findings</div><div class="agent-status">Proposal only</div></button>
+-            <button class="agent" role="tab" aria-selected="false" data-agent="identity"><span class="agent-badge">ID</span><div class="agent-name">Identity Agent</div><div class="agent-task">Flagged risky authentication</div><div class="agent-status">Proposal only</div></button>
+-            <button class="agent" role="tab" aria-selected="false" data-agent="compliance"><span class="agent-badge">CO</span><div class="agent-name">Compliance</div><div class="agent-task">Tested 14 controls</div><div class="agent-status">Proposal only</div></button>
+-            <button class="agent" role="tab" aria-selected="false" data-agent="engineering"><span class="agent-badge">SE</span><div class="agent-name">Engineering</div><div class="agent-task">Proposed a detection change</div><div class="agent-status review">Approval</div></button>
+-          </div>
+-          <div class="agent-detail" id="agent-detail" role="tabpanel"></div>
+-        </section>
+-      </div>
+-
+-      <section class="panel cases-panel" id="cases" aria-labelledby="cases-title">
+-        <div class="panel-head"><h3 id="cases-title">Cases requiring attention</h3><span>Select a case to inspect the evidence trail</span></div>
+-        <div class="case-row case-header"><span>Case</span><span>Finding</span><span>Severity</span><span>Confidence</span><span>Status</span></div>
+-        <div class="case-row" role="button" tabindex="0" data-open-case="INC-2841"><span class="case-id">INC-2841</span><span class="case-title">Probable Microsoft 365 account compromise</span><span class="severity critical">Critical</span><span class="confidence">97%</span><span class="state">Approval</span></div>
+-        <div class="case-row" role="button" tabindex="0" data-open-case="VUL-9912"><span class="case-id">VUL-9912</span><span class="case-title">Internet-exposed gateway affected by known exploit</span><span class="severity high">High</span><span class="confidence">94%</span><span class="state">Assigned</span></div>
+-        <div class="case-row" role="button" tabindex="0" data-open-case="IAM-2204"><span class="case-id">IAM-2204</span><span class="case-title">Dormant privileged account retained production access</span><span class="severity medium">Medium</span><span class="confidence">91%</span><span class="state">Review</span></div>
+-      </section>
+-
+-      <section class="panel governance" id="governance" aria-labelledby="gov-heading">
+-        <div class="gov-title"><div class="gov-shield" aria-hidden="true">✓</div><div><h3 id="gov-heading">Governance core enforced</h3><p>Agents have no execution capability. Human decisions and external execution attestations are records only.</p></div></div>
+-        <span class="chip">Proposal only · execution unavailable</span>
+-      </section>
+-    </main>
+-  </div>
+-
+-  <dialog class="drawer" id="case-dialog">
+-    <div class="drawer-head"><div><div class="eyebrow" id="dialog-id">INC-2841 · SOC + Identity</div><h2 id="dialog-title">Probable account compromise</h2></div><button class="close" aria-label="Close case">×</button></div>
+-    <div class="drawer-body">
+-      <div class="verdict"><div><strong id="verdict-title">Compromise highly likely</strong><p id="verdict-copy">Four independent signals corroborate unauthorized account access. Facts and inference are separated below.</p></div><div class="score" id="verdict-score">97%</div></div>
+-      <div class="evidence" id="evidence-list"></div>
+-      <div class="audit-grid"><div class="audit"><small>Procedure</small><span id="audit-procedure">Identity Compromise Playbook v3.2</span></div><div class="audit"><small>Framework mapping</small><span id="audit-framework">MITRE ATT&amp;CK T1078 · NIST SP 800-61r3</span></div><div class="audit"><small>Policy gate</small><span id="audit-policy">IAM-IR-004 · Human approval required</span></div><div class="audit"><small>Evidence integrity</small><span>4/4 sources verified · chain preserved</span></div></div>
+-      <div class="action-box"><h3 id="action-title">Proposed identity containment</h3><p id="action-copy">Proposed session revocation, temporary sign-in restriction, and incident documentation. Human review required; no response will be performed by this app.</p><div class="action-buttons"><button class="btn primary" id="case-action-link">View action record</button></div></div>
+-    </div>
+-  </dialog>
+-  <dialog class="drawer" id="action-dialog" aria-labelledby="action-record-title">
+-    <div class="drawer-head"><h2 id="action-record-title">Action record</h2><button class="close" id="close-action" aria-label="Close action record">×</button></div>
+-    <div class="drawer-body">
+-      <p>Session-only demo. Identities are self-reported, not authenticated. Refresh resets records. Approval never initiates execution.</p>
+-      <pre id="action-record"></pre>
+-      <label>Approver identity (unverified demo input)<input id="approver" autocomplete="off"></label>
+-      <label>Decision rationale<textarea id="decision-rationale"></textarea></label>
+-      <div class="action-buttons"><button class="btn primary" data-decision="approved">Record approval</button><button class="btn" data-decision="rejected">Record rejection</button><button class="btn" id="expire-action">Expire record</button></div>
+-      <h3>External execution attestation</h3>
+-      <p>Record only work a human performed outside this application, after approval.</p>
+-      <label>Execution timestamp (UTC ISO 8601)<input id="execution-time" placeholder="YYYY-MM-DDTHH:mm:ss.sssZ"></label>
+-      <label><input type="checkbox" id="execution-attestation"> I attest that execution occurred outside this app.</label>
+-      <button class="btn" id="record-execution">Record external execution</button>
+-    </div>
+-  </dialog>
+-  <div class="toast" role="status" aria-live="polite"></div>
+-
+-  <script type="module">
+-    import { createActionRepository } from "./action-model.mjs";
+-    const agents = {
+-      soc: { title: 'SOC Agent · Threat investigation', copy: 'Correlated identity, endpoint, cloud, and network evidence; flagged compromise indicators; proposed containment for human review.', procedure: 'Active procedure: Account takeover triage v3.2', frameworks: ['NIST SP 800-61r3', 'MITRE ATT&CK', 'CIS Control 13', 'Internal IR-01'] },
+-      vuln: { title: 'Vulnerability Agent · Exposure management', copy: 'Analyzed exposure, exploit activity, asset criticality, compensating controls, and remediation risk; prioritized findings; recommended a patch review.', procedure: 'Active procedure: Risk-based remediation v2.8', frameworks: ['CISA KEV', 'CVSS v4.0', 'NIST SP 800-40', 'CIS Control 7'] },
+-      identity: { title: 'Identity Agent · Access assurance', copy: 'Flagged risky sign-ins, privilege creep, stale identities, and access conflicts; recommended an access review.', procedure: 'Active procedure: Privileged access review v4.1', frameworks: ['NIST SP 800-63-4', 'Zero Trust', 'CIS Control 6', 'IAM-IR-004'] },
+-      compliance: { title: 'Compliance Agent · Continuous assurance', copy: 'Tested control criteria; validated evidence for control mappings; flagged gaps; proposed an evidence review.', procedure: 'Active procedure: Continuous control test v2.4', frameworks: ['NIST CSF 2.0', 'NIST SP 800-53', 'SOC 2', 'ISO 27001'] },
+-      engineering: { title: 'Security Engineering Agent · Defense improvement', copy: 'Analyzed detection coverage and change impact; tested rule criteria; proposed a detection change and rollback procedure.', procedure: 'Awaiting approval: Sentinel rule CR-118', frameworks: ['CIS Benchmarks', 'NIST SSDF', 'Change Mgmt', 'MITRE ATT&CK'] }
+-    };
+-    const cases = {
+-      'INC-2841': { id:'INC-2841 · SOC + Identity', title:'Probable account compromise', verdict:'Compromise highly likely', score:'97%', copy:'Four independent signals corroborate unauthorized account access. Facts and inference are separated below.', procedure:'Identity Compromise Playbook v3.2', framework:'MITRE ATT&CK T1078 · NIST SP 800-61r3', policy:'IAM-IR-004 · Human approval required', action:'Proposed identity containment', actionCopy:'Proposed session revocation, temporary sign-in restriction, and incident documentation. Human review required; no response will be performed by this app.', evidence:[['Impossible-travel authentication','Atlanta and Bucharest sign-ins occurred 14 minutes apart.','Entra ID'],['New MFA method registered','Authenticator added from an unmanaged device.','Identity'],['Bulk SharePoint download','312 files downloaded after the second sign-in.','M365'],['Malicious infrastructure match','Source IP appears in two independent threat feeds.','Intel']] },
+-      'VUL-9912': { id:'VUL-9912 · Vulnerability', title:'Exploitable internet gateway', verdict:'Remediation priority: immediate', score:'94%', copy:'The finding is validated, externally reachable, and associated with known exploitation. Business impact has been checked.', procedure:'Risk-Based Remediation Playbook v2.8', framework:'CISA KEV · NIST SP 800-40 · CVSS v4.0', policy:'VUL-SLA-001 · 24-hour remediation', action:'Proposed emergency patch review', actionCopy:'Recommended a human-managed patch window with snapshot, service checks, rescan evidence, and a 24-hour rollback plan. This app performs none of these steps.', evidence:[['Affected version confirmed','Package inventory matches the vulnerable range.','Scanner'],['External path verified','Gateway responds on the affected service port.','ASM'],['Known exploitation','The vulnerability appears in CISA KEV.','CISA'],['Production dependency mapped','Gateway supports customer authentication traffic.','CMDB']] },
+-      'IAM-2204': { id:'IAM-2204 · Identity', title:'Dormant privileged account', verdict:'Access violates policy', score:'91%', copy:'An inactive identity retains a production role with no documented exception or active owner.', procedure:'Privileged Access Review v4.1', framework:'NIST SP 800-63-4 · CIS Control 6', policy:'IAM-LP-007 · Manager review required', action:'Proposed access review', actionCopy:'Recommended owner review of production access and entitlement evidence. Approval records a decision only; access remains unchanged.', evidence:[['No interactive use in 93 days','Last successful sign-in occurred June 12.','Entra ID'],['Privileged role remains active','Identity retains Production Administrator.','PAM'],['No current HR assignment','User moved to an unrelated cost center.','HRIS'],['No exception on file','Policy exception search returned no result.','GRC']] }
+-    };
+-
+-    const detail = document.querySelector('#agent-detail');
+-    function renderAgent(key){
+-      const a=agents[key];
+-      detail.innerHTML=`<div><h4>${a.title}</h4><p>${a.copy}</p></div><div><div class="procedure"><small>Procedure engine</small><p>${a.procedure}</p></div><div class="frameworks" style="margin-top:12px">${a.frameworks.map(f=>`<span class="chip">${f}</span>`).join('')}</div></div>`;
+-      document.querySelectorAll('.agent').forEach(b=>{const on=b.dataset.agent===key;b.classList.toggle('active',on);b.setAttribute('aria-selected',String(on));});
+-    }
+-    renderAgent('soc');
+-    document.querySelectorAll('.agent').forEach(b=>b.addEventListener('click',()=>renderAgent(b.dataset.agent)));
+-
+-    const dialog=document.querySelector('#case-dialog');
+-    function openCase(id){
+-      const c=cases[id] || cases['INC-2841'];
+-      document.querySelector('#dialog-id').textContent=c.id; document.querySelector('#dialog-title').textContent=c.title;
+-      document.querySelector('#verdict-title').textContent=c.verdict; document.querySelector('#verdict-copy').textContent=c.copy; document.querySelector('#verdict-score').textContent=c.score;
+-      document.querySelector('#audit-procedure').textContent=c.procedure; document.querySelector('#audit-framework').textContent=c.framework; document.querySelector('#audit-policy').textContent=c.policy;
+-      document.querySelector('#action-title').textContent=c.action; document.querySelector('#action-copy').textContent=c.actionCopy;
+-      document.querySelector('#evidence-list').innerHTML=c.evidence.map((e,i)=>`<div class="evidence-item"><span class="check">✓</span><div><strong>${e[0]}</strong><span>${e[1]}</span></div><code>0${i+1} · ${e[2]}</code></div>`).join('');
+-      dialog.showModal();
+-    }
+-    document.querySelectorAll('[data-open-case]').forEach(el=>{el.addEventListener('click',()=>openCase(el.dataset.openCase));el.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();openCase(el.dataset.openCase);}})});
+-    document.querySelector('.close').addEventListener('click',()=>dialog.close());
+-    dialog.addEventListener('click',e=>{if(e.target===dialog)dialog.close();});
+-
+-    const toast=document.querySelector('.toast');
+-    function notify(message){toast.textContent=message;toast.classList.add('show');clearTimeout(window.toastTimer);window.toastTimer=setTimeout(()=>toast.classList.remove('show'),2600);}
+-    document.querySelectorAll('[data-scroll]').forEach(b=>b.addEventListener('click',()=>document.querySelector('#'+b.dataset.scroll).scrollIntoView({behavior:'smooth',block:'center'})));
+-    document.querySelector('.icon-btn').addEventListener('click',()=>notify('3 items need your review.'));
+-
+-
+-    const {agent:agentPort, review:humanReview}=createActionRepository();
+-    const seeds=[
+-      ['ACT-SOC-001','soc','Proposed identity containment','user:demo-admin','Correlated four compromise signals.','IAM-IR-004',['NIST SP 800-61r3','T1078'],'critical','Human recovery: verify identity, restore access under a separate approved procedure.'],
+-      ['ACT-ID-001','identity','Proposed session revocation','user:demo-standard','Flagged risky authentication.','IAM-IR-004',['NIST SP 800-63-4'],'high','Sessions cannot be restored; human-managed reauthentication required.'],
+-      ['ACT-VUL-001','vuln','Recommended patch review','gateway:demo-edge','Prioritized external exposure and KEV evidence.','VUL-SLA-001',['CISA KEV','NIST SP 800-40'],'critical','Human recovery: restore a verified snapshot and validate service health.'],
+-      ['ACT-CO-001','compliance','Proposed evidence review','control:SOC2-CC6.1','Validated evidence for control criteria.','GRC-REVIEW-001',['SOC 2 CC6.1'],'medium','Retain prior evidence and version history; human reviewer may supersede the record.'],
+-      ['ACT-SE-001','engineering','Proposed detection change','rule:CR-118','Analyzed detection coverage.','ENG-CHANGE-001',['T1078','NIST SSDF'],'high','Human recovery: restore the prior rule version and validate detection coverage.'],
+-      ['ACT-ID-002','identity','Proposed access review','user:demo-dormant','Flagged dormant privileged access.','IAM-LP-007',['CIS Control 6'],'medium','Human recovery: restore the recorded entitlement only after separate approval.']
+-    ];
+-    for(const [action_id,agent_id,action_type,target,justification,rule_id,control_refs,severity,rollback_procedure] of seeds){
+-      agentPort.propose({action_id,agent_id,action_type,target,justification,rule_id,control_refs,severity,rollback_procedure,proposed_at:'2026-09-13T20:00:00Z'});
+-      agentPort.submit(action_id);
+-    }
+-    const feed=[
+-      ['ACT-SOC-001','SOC Agent correlated 4 signals','Proposed identity containment for human review.'],
+-      ['ACT-ID-001','Identity Agent proposed session revocation','Human approval required by IAM-IR-004; no session change.'],
+-      ['ACT-VUL-001','Vulnerability Agent prioritized CVE','Recommended patch review based on exposure and KEV evidence.'],
+-      ['ACT-CO-001','Compliance Agent validated evidence for SOC 2 CC6.1','Proposed human review of the control evidence.'],
+-      ['ACT-SE-001','Engineering Agent proposed a rule','Proposed Sentinel detection mapped to ATT&CK T1078.']
+-    ];
+-    const caseActions={'INC-2841':'ACT-SOC-001','VUL-9912':'ACT-VUL-001','IAM-2204':'ACT-ID-002'};
+-    const esc=value=>String(value).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+-    const actionDialog=document.querySelector('#action-dialog');
+-    let selectedAction=null;
+-    function renderFeed(){
+-      document.querySelector('#action-feed').innerHTML=feed.map(([id,title,copy])=>{
+-        const action=agentPort.get(id);
+-        return '<article class="activity"><div class="trail"><span class="dot mint"></span></div><div><h4>'+esc(title)+'</h4><p>'+esc(copy)+'</p><a href="#action/'+id+'">'+id+'</a> <span class="status-badge">'+action.status+'</span></div></article>';
+-      }).join('');
+-      document.querySelectorAll('.case-row[data-open-case]').forEach(row=>row.querySelector('.state').textContent=agentPort.get(caseActions[row.dataset.openCase]).status);
+-    }
+-    function showAction(id){
+-      const record=agentPort.get(id); selectedAction=id;
+-      document.querySelector('#action-record-title').textContent=id+' · '+record.status;
+-      document.querySelector('#action-record').textContent=JSON.stringify(record,null,2);
+-      document.querySelectorAll('[data-decision]').forEach(b=>b.disabled=record.status!=='pending_approval');
+-      document.querySelector('#record-execution').disabled=record.status!=='approved';
+-      document.querySelector('#expire-action').disabled=!['proposed','pending_approval','approved'].includes(record.status);
+-      if(!actionDialog.open)actionDialog.showModal();
+-    }
+-    function navigateAction(){const match=location.hash.match(/^#action\/(ACT-[A-Z]+-\d+)$/);if(match){try{showAction(match[1]);}catch(e){notify(e.message);}}}
+-    document.querySelector('#case-action-link').addEventListener('click',()=>{
+-      const key=document.querySelector('#dialog-id').textContent.split(' · ')[0];
+-      dialog.close(); location.hash='action/'+caseActions[key]; showAction(caseActions[key]);
+-    });
+-    document.querySelector('#close-action').addEventListener('click',()=>actionDialog.close());
+-    document.querySelector('#action-feed').addEventListener('click',e=>{const a=e.target.closest('a');if(a){e.preventDefault();location.hash=a.hash;showAction(a.hash.split('/')[1]);}});
+-    const refresh=()=>{renderFeed();showAction(selectedAction);};
+-    document.querySelectorAll('[data-decision]').forEach(button=>button.addEventListener('click',()=>{
+-      try{
+-        humanReview.decide(selectedAction,button.dataset.decision,{
+-          approver:document.querySelector('#approver').value,
+-          decided_at:new Date().toISOString(),
+-          decision_rationale:document.querySelector('#decision-rationale').value
+-        });refresh();notify('Decision recorded for this session. No external action performed.');
+-      }catch(e){notify(e.message);}
+-    }));
+-    document.querySelector('#record-execution').addEventListener('click',()=>{
+-      try{
+-        if(!document.querySelector('#execution-attestation').checked)throw Error('Confirm external execution before recording it.');
+-        humanReview.recordExecution(selectedAction,document.querySelector('#execution-time').value);
+-        refresh();notify('External execution attestation recorded. This app performed no action.');
+-      }catch(e){notify(e.message);}
+-    });
+-    document.querySelector('#expire-action').addEventListener('click',()=>{
+-      try{humanReview.expire(selectedAction);refresh();notify('Action expired. No external action performed.');}catch(e){notify(e.message);}
+-    });
+-    window.addEventListener('hashchange',navigateAction);
+-    renderFeed();navigateAction();
+-    // Only inspection is exposed to agents. No decision, autonomy, or execution tools.
+-    if(document.modelContext?.registerTool){
+-      const lifecycle=new AbortController();
+-      try{Promise.resolve(document.modelContext.registerTool({
+-        name:'inspect_agent_action',title:'Inspect agent action',
+-        description:'Read a proposal record. No decision or external action is available.',
+-        inputSchema:{type:'object',properties:{action_id:{type:'string',enum:agentPort.list().map(a=>a.action_id)}},required:['action_id'],additionalProperties:false},
+-        annotations:{readOnlyHint:true,untrustedContentHint:false},
+-        execute(input){if(!input||Object.keys(input).some(k=>k!=='action_id'))throw Error('Invalid input');return agentPort.get(input.action_id);}
+-      },{signal:lifecycle.signal})).catch(()=>{});}catch{}
+-      window.addEventListener('pagehide',()=>lifecycle.abort(),{once:true});
+-    }
+-  </script>
+-</body>
+-</html>
++<!doctype html>
++<html lang="en">
++<head>
++  <meta charset="utf-8" />
++  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'none'; form-action 'none'; object-src 'none'; base-uri 'none'" />
++  <meta name="viewport" content="width=device-width, initial-scale=1" />
++  <meta name="theme-color" content="#07100f" />
++  <meta name="description" content="Aegis Operations — supervised security operations. Agents propose; humans decide. Execution is recorded, never performed." />
++  <title>Aegis Operations</title>
++  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cpath fill='%2307100f' d='M0 0h64v64H0z'/%3E%3Cpath fill='none' stroke='%236ef2c5' stroke-width='6' stroke-linejoin='round' d='M32 8 53 17v14c0 13-8 21-21 27C19 52 11 44 11 31V17z'/%3E%3Cpath fill='none' stroke='%23ffffff' stroke-width='5' stroke-linecap='round' d='m22 33 7 7 14-17'/%3E%3C/svg%3E" />
++  <style>
++    :root {
++      color-scheme: dark;
++      --bg: #07100f;
++      --panel: #0c1715;
++      --panel-2: #101d1b;
++      --line: #213431;
++      --line-strong: #35504b;
++      --text: #ecf6f3;
++      --muted: #8ca39e;
++      --quiet: #60736f;
++      --mint: #6ef2c5;
++      --mint-dim: #163f35;
++      --cyan: #69d7f1;
++      --amber: #f2bb68;
++      --red: #f17777;
++      --violet: #9c8cff;
++      --shadow: 0 24px 70px rgba(0,0,0,.38);
++      --radius: 16px;
++      font-family: Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
++    }
++    * { box-sizing: border-box; }
++    html { background: var(--bg); }
++    body { margin: 0; min-height: 100vh; background: radial-gradient(circle at 68% -20%, rgba(50,128,105,.17), transparent 34rem), var(--bg); color: var(--text); }
++    button { font: inherit; }
++    button, [role="button"] { -webkit-tap-highlight-color: transparent; }
++    .app { min-height: 100vh; display: grid; grid-template-columns: 228px minmax(0,1fr); }
++    .sidebar { position: sticky; top: 0; height: 100vh; border-right: 1px solid var(--line); padding: 24px 16px; display: flex; flex-direction: column; background: rgba(7,16,15,.88); backdrop-filter: blur(18px); z-index: 4; }
++    .brand { display: flex; align-items: center; gap: 11px; padding: 0 8px 25px; }
++    .mark { width: 32px; height: 36px; display: grid; place-items: center; color: var(--mint); }
++    .mark svg { width: 100%; height: 100%; }
++    .brand strong { font-size: .95rem; letter-spacing: -.01em; }
++    .brand small { color: var(--muted); display: block; margin-top: 2px; font-size: .72rem; letter-spacing: .04em; }
++    .nav-label { padding: 6px 10px 8px; color: var(--quiet); font: 700 .66rem/1 ui-monospace, SFMono-Regular, Menlo, monospace; letter-spacing: .12em; text-transform: uppercase; }
++    .nav { display: grid; gap: 4px; }
++    .nav button { width: 100%; border: 0; background: transparent; color: var(--muted); border-radius: 10px; padding: 10px 11px; display: flex; align-items: center; gap: 10px; cursor: pointer; text-align: left; font-weight: 650; font-size: .88rem; }
++    .nav button:hover { background: rgba(255,255,255,.035); color: var(--text); }
++    .nav button.active { background: var(--mint-dim); color: var(--mint); }
++    .nav-icon { width: 18px; height: 18px; display: grid; place-items: center; font-family: ui-monospace, monospace; font-size: .72rem; border: 1px solid currentColor; border-radius: 5px; opacity: .9; }
++    .side-bottom { margin-top: auto; }
++    .system-card { border: 1px solid var(--line); border-radius: 12px; padding: 12px; background: rgba(255,255,255,.02); }
++    .system-row { display:flex; gap: 8px; align-items:center; font-size: .78rem; font-weight: 700; }
++    .pulse { width: 8px; height: 8px; border-radius: 50%; background: var(--mint); box-shadow: 0 0 0 4px rgba(110,242,197,.09), 0 0 14px rgba(110,242,197,.75); }
++    .system-card p { color: var(--muted); font-size: .72rem; line-height: 1.45; margin: 8px 0 0; }
++    main { min-width: 0; padding: 0 28px 38px; }
++    .topbar { height: 76px; display:flex; align-items:center; justify-content:space-between; border-bottom: 1px solid var(--line); margin-bottom: 25px; }
++    .eyebrow { color: var(--muted); font-size: .72rem; font-weight: 800; letter-spacing: .11em; text-transform: uppercase; }
++    .topbar h1 { font-size: 1.1rem; margin: 4px 0 0; letter-spacing: -.02em; }
++    .top-actions { display: flex; align-items:center; gap: 10px; }
++    .scope { color: var(--muted); border: 1px solid var(--line); background: var(--panel); border-radius: 999px; padding: 8px 12px; font-size: .78rem; }
++    .icon-btn { width: 36px; height: 36px; border: 1px solid var(--line); background: var(--panel); color: var(--muted); border-radius: 10px; cursor:pointer; }
++    .icon-btn:hover { border-color: var(--line-strong); color: var(--text); }
++    .grid { display: grid; grid-template-columns: minmax(0, 1.65fr) minmax(300px, .75fr); gap: 18px; }
++    .hero { border: 1px solid var(--line); border-radius: var(--radius); background: linear-gradient(135deg, rgba(110,242,197,.06), transparent 52%), var(--panel); padding: 22px; position: relative; overflow:hidden; box-shadow: var(--shadow); }
++    .hero::after { content:""; position:absolute; width:220px; height:220px; right:-96px; top:-105px; border: 1px solid rgba(110,242,197,.18); border-radius:50%; box-shadow: 0 0 0 32px rgba(110,242,197,.018), 0 0 0 64px rgba(110,242,197,.012); }
++    .hero-top { display:flex; justify-content:space-between; align-items:start; gap: 16px; position:relative; z-index:1; }
++    .hero h2 { font-size: clamp(1.4rem, 2vw, 2rem); line-height: 1.12; letter-spacing: -.04em; max-width: 620px; margin: 8px 0 7px; }
++    .hero p { margin: 0; max-width: 640px; color: var(--muted); line-height:1.55; font-size:.9rem; }
++    .trust { border: 1px solid rgba(110,242,197,.25); background: rgba(110,242,197,.07); color: var(--mint); padding: 8px 10px; border-radius: 9px; white-space:nowrap; font: 700 .7rem/1 ui-monospace, monospace; letter-spacing:.04em; }
++    .metric-row { display:grid; grid-template-columns: repeat(4,1fr); gap: 10px; margin-top: 24px; position:relative; z-index:1; }
++    .metric { border-top: 1px solid var(--line); padding-top: 13px; }
++    .metric-value { font: 650 1.45rem/1 ui-monospace, SFMono-Regular, Menlo, monospace; letter-spacing:-.05em; }
++    .metric-label { color: var(--muted); margin-top:7px; font-size:.72rem; line-height:1.25; }
++    .metric-value.mint { color:var(--mint); }
++    .metric-value.amber { color:var(--amber); }
++    .metric-value.red { color:var(--red); }
++    .panel { border:1px solid var(--line); border-radius:var(--radius); background:var(--panel); }
++    .panel-head { display:flex; align-items:center; justify-content:space-between; padding: 17px 18px; border-bottom:1px solid var(--line); }
++    .panel-head h3 { margin:0; font-size:.92rem; letter-spacing:-.01em; }
++    .panel-head span { color:var(--muted); font-size:.72rem; }
++    .activity-panel { grid-column:2; grid-row:1 / span 2; overflow:hidden; }
++    .activity-list { padding: 6px 16px 2px; }
++    .activity { display:grid; grid-template-columns: 14px 1fr; gap:10px; padding:13px 0; border-bottom:1px solid rgba(33,52,49,.7); }
++    .activity:last-child { border-bottom:0; }
++    .trail { position:relative; display:flex; justify-content:center; }
++    .trail::after { content:""; position:absolute; width:1px; top:11px; bottom:-24px; background:var(--line); }
++    .activity:last-child .trail::after { display:none; }
++    .dot { width:7px; height:7px; margin-top:5px; border-radius:50%; background:var(--cyan); position:relative; z-index:1; box-shadow:0 0 0 4px var(--panel); }
++    .dot.mint{background:var(--mint)} .dot.amber{background:var(--amber)} .dot.violet{background:var(--violet)} .dot.red{background:var(--red)}
++    .activity h4 { margin:0 0 4px; font-size:.79rem; line-height:1.35; }
++    .activity p { margin:0; color:var(--muted); font-size:.7rem; line-height:1.45; }
++    .activity time { display:block; color:var(--quiet); font: .64rem ui-monospace, monospace; margin-top:6px; }
++    .agents-panel { overflow:hidden; }
++    .agent-list { display:grid; grid-template-columns:repeat(5,1fr); }
++    .agent { border:0; border-right:1px solid var(--line); background:transparent; color:var(--text); padding:16px 13px; text-align:left; cursor:pointer; min-width:0; }
++    .agent:last-child { border-right:0; }
++    .agent:hover { background:rgba(255,255,255,.025); }
++    .agent.active { background:linear-gradient(180deg, rgba(110,242,197,.1), transparent); box-shadow: inset 0 2px var(--mint); }
++    .agent-badge { width:31px; height:31px; border:1px solid var(--line-strong); border-radius:9px; display:grid; place-items:center; color:var(--mint); font:700 .69rem ui-monospace,monospace; margin-bottom:20px; }
++    .agent-name { font-weight:800; font-size:.78rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
++    .agent-task { color:var(--muted); font-size:.66rem; margin-top:5px; line-height:1.35; height:2.7em; overflow:hidden; }
++    .agent-status { margin-top:14px; display:flex; align-items:center; gap:6px; color:var(--mint); font:700 .62rem ui-monospace,monospace; text-transform:uppercase; }
++    .agent-status::before { content:""; width:6px; height:6px; background:currentColor; border-radius:50%; }
++    .agent-status.review { color:var(--amber); }
++    .agent-detail { display:grid; grid-template-columns:minmax(0,1fr) 230px; gap:14px; border-top:1px solid var(--line); padding:17px 18px; }
++    .agent-detail h4 { margin:0 0 6px; font-size:.9rem; }
++    .agent-detail p { margin:0; color:var(--muted); line-height:1.5; font-size:.78rem; }
++    .procedure { border-left:2px solid var(--mint); padding-left:12px; }
++    .procedure small { display:block; color:var(--mint); font:700 .65rem ui-monospace,monospace; margin-bottom:5px; text-transform:uppercase; }
++    .frameworks { display:flex; flex-wrap:wrap; gap:6px; align-content:start; }
++    .chip { border:1px solid var(--line); background:var(--panel-2); color:#b4c7c2; border-radius:6px; padding:6px 7px; font:600 .61rem ui-monospace,monospace; }
++    .cases-panel { margin-top:18px; overflow:hidden; }
++    .case-row { display:grid; grid-template-columns:105px minmax(260px,1.5fr) 110px 120px 96px; gap:14px; align-items:center; border-bottom:1px solid var(--line); padding:13px 18px; cursor:pointer; }
++    .case-row:last-child { border-bottom:0; }
++    .case-row:not(.case-header):hover { background:rgba(255,255,255,.022); }
++    .case-header { color:var(--quiet); font:700 .62rem ui-monospace,monospace; text-transform:uppercase; letter-spacing:.06em; cursor:default; padding-top:10px; padding-bottom:10px; }
++    .case-id { color:var(--muted); font:700 .68rem ui-monospace,monospace; }
++    .case-title { font-weight:750; font-size:.78rem; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
++    .severity { display:inline-flex; align-items:center; gap:6px; font:700 .66rem ui-monospace,monospace; text-transform:uppercase; }
++    .severity::before { content:""; width:6px; height:6px; border-radius:50%; background:currentColor; }
++    .severity.critical{color:var(--red)} .severity.high{color:var(--amber)} .severity.medium{color:var(--cyan)}
++    .confidence { font:700 .72rem ui-monospace,monospace; }
++    .state { color:var(--muted); font-size:.7rem; }
++    .governance { margin-top:18px; display:grid; grid-template-columns:minmax(0,1fr) auto; align-items:center; gap:18px; padding:17px 18px; }
++    .gov-title { display:flex; gap:11px; align-items:flex-start; }
++    .gov-shield { width:31px;height:31px;display:grid;place-items:center;border:1px solid rgba(110,242,197,.25);border-radius:9px;color:var(--mint);background:rgba(110,242,197,.05); }
++    .gov-title h3 { margin:0 0 4px; font-size:.85rem; }
++    .gov-title p { margin:0; color:var(--muted); font-size:.72rem; line-height:1.4; }
++    .modes { display:flex; gap:5px; background:#07100f; border:1px solid var(--line); border-radius:10px; padding:4px; }
++    .modes button { border:0; background:transparent; color:var(--muted); border-radius:7px; padding:8px 10px; cursor:pointer; font-size:.68rem; font-weight:750; }
++    .modes button.active { background:var(--mint-dim); color:var(--mint); }
++    .drawer { border:1px solid var(--line-strong); width:min(680px, calc(100vw - 24px)); max-height:calc(100vh - 40px); padding:0; border-radius:18px; background:#0b1513; color:var(--text); box-shadow:0 30px 100px rgba(0,0,0,.65); }
++    .drawer::backdrop { background:rgba(0,0,0,.68); backdrop-filter:blur(4px); }
++    .drawer-head { padding:20px 22px 16px; border-bottom:1px solid var(--line); display:flex; justify-content:space-between; gap:16px; }
++    .drawer h2 { margin:5px 0 0; font-size:1.2rem; letter-spacing:-.025em; }
++    .close { border:1px solid var(--line); width:34px;height:34px;border-radius:9px;background:var(--panel);color:var(--muted);cursor:pointer; }
++    .drawer-body { padding:20px 22px 22px; overflow:auto; }
++    .verdict { display:grid;grid-template-columns:1fr auto;align-items:center;gap:14px;border:1px solid rgba(241,119,119,.22);background:rgba(241,119,119,.055);border-radius:12px;padding:14px 15px; }
++    .verdict strong { font-size:.84rem; }
++    .verdict p { margin:5px 0 0;color:var(--muted);font-size:.72rem;line-height:1.45; }
++    .score { color:var(--red);font:750 1.35rem ui-monospace,monospace; }
++    .evidence { margin:18px 0; display:grid; gap:8px; }
++    .evidence-item { display:grid;grid-template-columns:24px 1fr auto;gap:9px;align-items:start;border:1px solid var(--line);border-radius:10px;padding:10px 11px; }
++    .check { color:var(--mint);font-weight:900; }
++    .evidence-item strong { font-size:.74rem;display:block; }
++    .evidence-item span { color:var(--muted);font-size:.68rem;line-height:1.4; }
++    .evidence-item code { color:var(--quiet);font-size:.61rem; }
++    .audit-grid { display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:18px; }
++    .audit { border-top:1px solid var(--line);padding-top:9px; }
++    .audit small { color:var(--quiet);font:700 .59rem ui-monospace,monospace;text-transform:uppercase;display:block;margin-bottom:5px; }
++    .audit span { font-size:.7rem;color:#b7c9c5; }
++    .action-box { border:1px solid var(--line);border-radius:12px;padding:14px; }
++    .action-box h3{margin:0 0 5px;font-size:.82rem}.action-box p{margin:0;color:var(--muted);font-size:.7rem;line-height:1.45}
++    .action-buttons { display:flex;gap:8px;margin-top:13px; }
++    .btn { border:1px solid var(--line);border-radius:9px;padding:9px 12px;font-weight:750;font-size:.72rem;cursor:pointer;background:var(--panel-2);color:var(--text); }
++    .btn.primary { background:var(--mint);border-color:var(--mint);color:#06110e; }
++    .btn:hover { transform:translateY(-1px); }
++    .toast { position:fixed;right:24px;bottom:24px;background:#e9f8f3;color:#07100f;padding:11px 14px;border-radius:10px;font-weight:800;font-size:.75rem;box-shadow:var(--shadow);opacity:0;transform:translateY(8px);pointer-events:none;transition:.2s ease;z-index:20; }
++    .toast.show { opacity:1;transform:translateY(0); }
++    .mobile-menu { display:none; }
++    @media (max-width: 1060px) {
++      .app { grid-template-columns:76px minmax(0,1fr); }
++      .brand-copy,.nav button span:not(.nav-icon),.nav-label,.system-card p,.system-row span:last-child { display:none; }
++      .sidebar{padding-inline:12px}.brand{justify-content:center;padding-inline:0}.nav button{justify-content:center;padding:11px}.system-card{display:grid;place-items:center;padding:12px 8px}
++      .grid{grid-template-columns:1fr}.activity-panel{grid-column:1;grid-row:auto}.agent-list{grid-template-columns:repeat(5,minmax(115px,1fr));overflow-x:auto}.activity-list{display:grid;grid-template-columns:repeat(2,1fr);gap:0 14px}.activity:nth-child(5){display:none}
++    }
++    @media (max-width: 720px) {
++      .app{display:block}.sidebar{position:fixed;height:auto;left:10px;right:10px;bottom:10px;top:auto;border:1px solid var(--line);border-radius:14px;padding:6px;background:rgba(7,16,15,.96)}
++      .brand,.nav-label,.side-bottom{display:none}.nav{grid-template-columns:repeat(6,1fr);gap:2px}.nav button{padding:9px 4px}.nav button span:not(.nav-icon){display:none}.nav-icon{border:0;font-size:.65rem}
++      main{padding:0 14px 90px}.topbar{height:66px;margin-bottom:14px}.scope{display:none}.hero{padding:17px}.hero-top{display:block}.trust{display:inline-block;margin-top:14px}.metric-row{grid-template-columns:repeat(2,1fr);gap:14px}.metric-value{font-size:1.2rem}
++      .activity-list{display:block}.activity:nth-child(5){display:grid}.agent-detail{grid-template-columns:1fr}.frameworks{margin-top:4px}.case-row{grid-template-columns:86px 1fr 76px;padding:12px 14px}.case-row>*:nth-child(4),.case-row>*:nth-child(5){display:none}.case-header{display:none}.governance{grid-template-columns:1fr}.modes{overflow:auto}.modes button{flex:1}.activity-panel{display:none}.topbar h1{font-size:1rem}.eyebrow{font-size:.62rem}.agent-list{grid-template-columns:repeat(5,130px)}
++      .audit-grid{grid-template-columns:1fr}.action-buttons{flex-direction:column}.btn{width:100%}.toast{left:14px;right:14px;bottom:80px;text-align:center}
++    }
++    @media (prefers-reduced-motion:reduce){*{scroll-behavior:auto!important;transition:none!important}.btn:hover{transform:none}}
++
++    .status-badge {display:inline-block;border:1px solid var(--line-strong);border-radius:6px;padding:4px 7px;color:var(--amber);font-size:.875rem; margin-top:8px}
++    .activity a{color:var(--mint);font-size:.875rem}
++    #action-record{white-space:pre-wrap;overflow-wrap:anywhere;font-size:.875rem}
++    #action-dialog label{display:block;margin:12px 0;font-size:1rem}
++    #action-dialog input:not([type=checkbox]),#action-dialog textarea{display:block;width:100%;padding:10px;background:var(--panel);color:var(--text);border:1px solid var(--line-strong);border-radius:7px;font:inherit}
++    button:disabled{opacity:.45;cursor:not-allowed}
++    .state{overflow-wrap:anywhere}
++    @media(max-width:1060px){.activity:nth-child(5){display:grid}}
++    @media(max-width:720px){.activity-panel{display:block}}
++
++    #control-panel{margin-top:20px}
++    #control-list button{display:block;width:100%;background:transparent;color:var(--text);border:0;border-bottom:1px solid var(--line);padding:14px;text-align:left;font-size:1rem}
++    #control-list button[data-status=not_assessed]{background:#f2bb68;color:#171008;font-weight:800;border:2px solid #ffe2b2}
++    #control-list button[data-status=tested_fail]{border-left:3px solid var(--red)}
++    .metric.unknown{background:#f2bb68;color:#171008;padding:14px;border-radius:10px}
++    .metric.unknown .metric-label{color:#171008;font-weight:800}
++    .metric-label{font-size:.875rem}
++    #control-dialog label{display:block;margin-top:12px}
++    #control-dialog input,#control-dialog textarea{display:block;width:100%;padding:10px;background:var(--panel);color:var(--text);border:1px solid var(--line);font:inherit}
++    #control-record{white-space:pre-wrap;overflow-wrap:anywhere}
++    #control-list small{display:block;margin-top:6px;font-size:.875rem}
++    .agent-task{height:auto}.icon-btn{flex-shrink:0}
++    .hero h2{font-size:1.5rem}
++  </style>
++</head>
++<body>
++  <div class="app">
++    <aside class="sidebar" aria-label="Primary navigation">
++      <div class="brand">
++        <div class="mark" aria-hidden="true"><svg viewBox="0 0 36 42" fill="none"><path d="M18 2 33 8.5v10c0 9.5-5.8 15.5-15 20C8.8 34 3 28 3 18.5v-10L18 2Z" stroke="currentColor" stroke-width="2"/><path d="m10.5 20 5 5 10-12" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
++        <div class="brand-copy"><strong>Aegis Operations</strong><small>Supervised security operations.</small></div>
++      </div>
++      <div class="nav-label">Workspace</div>
++      <nav class="nav">
++        <button class="active"><span class="nav-icon">OV</span><span>Overview</span></button>
++        <button data-scroll="agents"><span class="nav-icon">AI</span><span>AI workforce</span></button>
++        <button data-open-case="INC-2841"><span class="nav-icon">IN</span><span>Incidents</span></button>
++        <button data-scroll="cases"><span class="nav-icon">VU</span><span>Exposure</span></button>
++        <button data-scroll="governance"><span class="nav-icon">ID</span><span>Identity</span></button>
++        <button data-scroll="governance"><span class="nav-icon">GV</span><span>Governance</span></button>
++      </nav>
++      <div class="side-bottom">
++        <div class="system-card"><div class="system-row"><span class="pulse"></span><span>Proposal-only model</span></div><p>Agent scope · September 2026 UTC</p></div>
++      </div>
++    </aside>
++
++    <main>
++      <header class="topbar">
++        <div><div class="eyebrow">Security command center</div><h1>Assessment observations</h1></div>
++        <div class="top-actions"><span class="scope">Acme Cloud · Session-only demo</span><button class="icon-btn" aria-label="View observation window">i</button></div>
++      </header>
++
++      <div class="grid">
++        <section class="hero" aria-labelledby="overview-title">
++          <div class="hero-top">
++            <div><div class="eyebrow">Assessment cycle · September 2026 UTC</div><h2 id="overview-title">Coverage counts pending record initialization.</h2><p>Demo observations. No authenticated assessment records. Refresh resets this session.</p></div>
++            <div class="trust">Cycle · September 2026 UTC</div>
++          </div>
++<div class="metric-row" id="coverage-metrics"></div><section class="panel" id="control-panel"><div class="panel-head"><h3>Control records · September 2026 UTC</h3><span>Not assessed first</span></div><div id="control-list"></div></section>
++        </section>
++
++        <aside class="panel activity-panel" aria-labelledby="activity-title">
++          <div class="panel-head"><h3 id="activity-title">Agent proposals</h3><span>Observations · September 2026 UTC</span></div>
++          <div class="activity-list" id="action-feed"></div></aside>
++
++        <section class="panel agents-panel" id="agents" aria-labelledby="agents-title">
++          <div class="panel-head"><h3 id="agents-title">AI security workforce</h3><span>Agent scope · September 2026 UTC</span></div>
++          <div class="agent-list" role="tablist" aria-label="Security agents">
++            <button class="agent active" role="tab" aria-selected="true" data-agent="soc"><span class="agent-badge">SO</span><div class="agent-name">SOC Agent</div><div class="agent-task">Observed alert records · September 2026 UTC</div><div class="agent-status">Pending review</div></button>
++            <button class="agent" role="tab" aria-selected="false" data-agent="vuln"><span class="agent-badge">VM</span><div class="agent-name">Vulnerability</div><div class="agent-task">Observed exposure records · September 2026 UTC</div><div class="agent-status">Pending review</div></button>
++            <button class="agent" role="tab" aria-selected="false" data-agent="identity"><span class="agent-badge">ID</span><div class="agent-name">Identity Agent</div><div class="agent-task">Observed authentication records · September 2026 UTC</div><div class="agent-status">Pending review</div></button>
++            <button class="agent" role="tab" aria-selected="false" data-agent="compliance"><span class="agent-badge">CO</span><div class="agent-name">Compliance</div><div class="agent-task">Collected control evidence · September 2026 UTC</div><div class="agent-status">Pending review</div></button>
++            <button class="agent" role="tab" aria-selected="false" data-agent="engineering"><span class="agent-badge">SE</span><div class="agent-name">Engineering</div><div class="agent-task">Observed rule proposal · September 2026 UTC</div><div class="agent-status review">Approval</div></button>
++          </div>
++          <div class="agent-detail" id="agent-detail" role="tabpanel"></div>
++        </section>
++      </div>
++
++      <section class="panel cases-panel" id="cases" aria-labelledby="cases-title">
++        <div class="panel-head"><h3 id="cases-title">Case observations · September 2026 UTC</h3><span>Select a case to inspect the evidence trail</span></div>
++        <div class="case-row case-header"><span>Case</span><span>Observation</span><span>Assessment</span><span>Window</span><span>Status</span></div>
++        <div class="case-row" role="button" tabindex="0" data-open-case="INC-2841"><span class="case-id">INC-2841</span><span class="case-title">Microsoft 365 sign-in and download records</span><span>Pending review</span><span>September 2026 UTC</span><span class="state">Approval</span></div>
++        <div class="case-row" role="button" tabindex="0" data-open-case="VUL-9912"><span class="case-id">VUL-9912</span><span class="case-title">Gateway inventory and exposure records</span><span>Pending review</span><span>September 2026 UTC</span><span class="state">Assigned</span></div>
++        <div class="case-row" role="button" tabindex="0" data-open-case="IAM-2204"><span class="case-id">IAM-2204</span><span class="case-title">Account activity and entitlement records</span><span>Pending review</span><span>September 2026 UTC</span><span class="state">Review</span></div>
++      </section>
++
++      <section class="panel governance" id="governance" aria-labelledby="gov-heading">
++        <div class="gov-title"><div class="gov-shield" aria-hidden="true">i</div><div><h3 id="gov-heading">Action recording constraints</h3><p>Agents have no execution capability. Human decisions and external execution attestations are records only.</p></div></div>
++        <span class="chip">Pending review · execution unavailable</span>
++      </section>
++    </main>
++  </div>
++
++  <dialog class="drawer" id="case-dialog">
++    <div class="drawer-head"><div><div class="eyebrow" id="dialog-id">INC-2841 · SOC + Identity</div><h2 id="dialog-title">Sign-in and download observations</h2></div><button class="close" aria-label="Close case">×</button></div>
++    <div class="drawer-body">
++      <div class="verdict"><div><strong id="verdict-title">Pending review</strong><p id="verdict-copy">Sign-in, authentication-method, download, and threat-feed records collected during September 2026 UTC.</p></div></div>
++      <div class="evidence" id="evidence-list"></div>
++      <div class="audit-grid"><div class="audit"><small>Procedure</small><span id="audit-procedure">Identity Compromise Playbook v3.2</span></div><div class="audit"><small>Framework mapping</small><span id="audit-framework">MITRE ATT&amp;CK T1078 · NIST SP 800-61r3</span></div><div class="audit"><small>Policy gate</small><span id="audit-policy">IAM-IR-004 · Human approval required</span></div><div class="audit"><small>Evidence window</small><span>September 2026 UTC · demo source records</span></div></div>
++      <div class="action-box"><h3 id="action-title">Proposed identity containment</h3><p id="action-copy">Proposed session revocation, temporary sign-in restriction, and incident documentation. Human review required; no response will be performed by this app.</p><div class="action-buttons"><button class="btn primary" id="case-action-link">View action record</button></div></div>
++    </div>
++  </dialog>
++  <dialog class="drawer" id="action-dialog" aria-labelledby="action-record-title">
++    <div class="drawer-head"><h2 id="action-record-title">Action record</h2><button class="close" id="close-action" aria-label="Close action record">×</button></div>
++    <div class="drawer-body">
++      <p>Session-only demo. Identities are self-reported, not authenticated. Refresh resets records. Approval never initiates execution.</p>
++      <pre id="action-record"></pre>
++      <label>Approver identity (unverified demo input)<input id="approver" autocomplete="off"></label>
++      <label>Decision rationale<textarea id="decision-rationale"></textarea></label>
++      <div class="action-buttons"><button class="btn primary" data-decision="approved">Record approval</button><button class="btn" data-decision="rejected">Record rejection</button><button class="btn" id="expire-action">Expire record</button></div>
++      <h3>External execution attestation</h3>
++      <p>Record only work a human performed outside this application, after approval.</p>
++      <label>Execution timestamp (UTC ISO 8601)<input id="execution-time" placeholder="YYYY-MM-DDTHH:mm:ss.sssZ"></label>
++      <label><input type="checkbox" id="execution-attestation"> I attest that execution occurred outside this app.</label>
++      <button class="btn" id="record-execution">Record external execution</button>
++    </div>
++  </dialog>
++  <dialog class="drawer" id="control-dialog" aria-labelledby="control-title">
++    <div class="drawer-head"><h2 id="control-title">Control record</h2><button class="close" id="close-control" aria-label="Close control record">×</button></div>
++    <div class="drawer-body">
++      <p>Session-only demo. Assessor identities are self-reported, not authenticated. Refresh resets records.</p>
++      <pre id="control-record"></pre>
++      <label>Evidence source<input id="evidence-source"></label>
++      <button class="btn" id="collect-control">Record collected evidence</button>
++      <label>Assessor identity (unverified demo input)<input id="control-assessor"></label>
++      <label>Assessment rationale<textarea id="control-rationale"></textarea></label>
++      <div class="action-buttons"><button class="btn" data-control-status="tested_pass">Record tested pass</button><button class="btn" data-control-status="tested_fail">Record tested fail</button><button class="btn" data-control-status="exception_approved">Record approved exception</button></div>
++      <p>Evidence collection is not a test. An approved exception is not a pass.</p>
++    </div>
++  </dialog>
++  <div class="toast" role="status" aria-live="polite"></div>
++
++  <script type="module">
++    import { createActionRepository } from "./action-model.mjs";
++    import { createControlRepository, coverage, coverageStatement, conclusionFor, effectiveStatus, sortControls } from "./control-model.mjs";
++    const agents = {
++      soc: { title: 'SOC Agent · Observations', copy: 'Observed identity, endpoint, cloud, and network records; pending review.', procedure: 'Active procedure: Account takeover triage v3.2', frameworks: ['NIST SP 800-61r3', 'MITRE ATT&CK', 'CIS Control 13', 'Internal IR-01'] },
++      vuln: { title: 'Vulnerability Agent · Observations', copy: 'Collected exposure, exploit-reference, asset, and control records; pending review.', procedure: 'Active procedure: Risk-based remediation v2.8', frameworks: ['CISA KEV', 'CVSS v4.0', 'NIST SP 800-40', 'CIS Control 7'] },
++      identity: { title: 'Identity Agent · Observations', copy: 'Collected sign-in, privilege, account-activity, and access records; pending review.', procedure: 'Active procedure: Privileged access review v4.1', frameworks: ['NIST SP 800-63-4', 'Zero Trust', 'CIS Control 6', 'IAM-IR-004'] },
++      compliance: { title: 'Compliance Agent · Evidence collection', copy: 'Collected evidence for control criteria; pending review.', procedure: 'Active procedure: Continuous control test v2.4', frameworks: ['NIST CSF 2.0', 'NIST SP 800-53', 'SOC 2', 'ISO 27001'] },
++      engineering: { title: 'Security Engineering Agent · Observations', copy: 'Collected detection-rule and change-impact records; pending review.', procedure: 'Awaiting approval: Sentinel rule CR-118', frameworks: ['CIS Benchmarks', 'NIST SSDF', 'Change Mgmt', 'MITRE ATT&CK'] }
++    };
++    const cases = {
++      'INC-2841': { id:'INC-2841 · SOC + Identity', title:'Sign-in and download observations', verdict:'Pending review',  copy:'Sign-in, authentication-method, download, and threat-feed records collected during September 2026 UTC.', procedure:'Identity Compromise Playbook v3.2', framework:'MITRE ATT&CK T1078 · NIST SP 800-61r3', policy:'IAM-IR-004 · Human approval required', action:'Proposed identity containment', actionCopy:'Proposed session revocation, temporary sign-in restriction, and incident documentation. Human review required; no response will be performed by this app.', evidence:[['Sign-in location records','Observed sign-in records: Atlanta and Bucharest; 14-minute interval during September 2026 UTC.','Entra ID'],['Authentication-method record','Observed authenticator-registration record with an unmanaged-device attribute.','Identity'],['SharePoint download records','Observed 312 file-download entries after the second sign-in during September 2026 UTC.','M365'],['Threat-feed records','Observed source-IP entries in two threat-feed records during September 2026 UTC.','Intel']] },
++      'VUL-9912': { id:'VUL-9912 · Vulnerability', title:'Gateway observations', verdict:'Pending review',  copy:'Inventory, reachability, catalog, and dependency records collected during September 2026 UTC.', procedure:'Risk-Based Remediation Playbook v2.8', framework:'CISA KEV · NIST SP 800-40 · CVSS v4.0', policy:'VUL-SLA-001 · 24-hour remediation', action:'Proposed emergency patch review', actionCopy:'Recommended a human-managed patch window with snapshot, service checks, rescan evidence, and a 24-hour rollback plan. This app performs none of these steps.', evidence:[['Inventory version observed','Collected package-version and advisory-range records.','Scanner'],['Service response observed','Collected gateway service-response record.','ASM'],['Catalog entry observed','Collected a CISA KEV catalog reference.','CISA'],['Dependency record collected','Observed customer-authentication dependency in CMDB record.','CMDB']] },
++      'IAM-2204': { id:'IAM-2204 · Identity', title:'Account activity observations', verdict:'Pending review',  copy:'Account activity, role, HR, and exception-search records collected during September 2026 UTC.', procedure:'Privileged Access Review v4.1', framework:'NIST SP 800-63-4 · CIS Control 6', policy:'IAM-LP-007 · Manager review required', action:'Proposed access review', actionCopy:'Recommended owner review of production access and entitlement evidence. Approval records a decision only; access remains unchanged.', evidence:[['Activity records · 2026-06-12–2026-09-13 UTC','Most recent sign-in in collected records: 2026-06-12 UTC.','Entra ID'],['Role assignment observed','Observed Production Administrator assignment in the collected record.','PAM'],['HR record collected','Observed cost-center change in the HR record.','HRIS'],['Exception search observed','Observed no entries in the collected exception-search result.','GRC']] }
++    };
++
++    const detail = document.querySelector('#agent-detail');
++    function renderAgent(key){
++      const a=agents[key];
++      detail.innerHTML=`<div><h4>${a.title}</h4><p>${a.copy}</p></div><div><div class="procedure"><small>Procedure engine</small><p>${a.procedure}</p></div><div class="frameworks" style="margin-top:12px">${a.frameworks.map(f=>`<span class="chip">${f}</span>`).join('')}</div></div>`;
++      document.querySelectorAll('.agent').forEach(b=>{const on=b.dataset.agent===key;b.classList.toggle('active',on);b.setAttribute('aria-selected',String(on));});
++    }
++    renderAgent('soc');
++    document.querySelectorAll('.agent').forEach(b=>b.addEventListener('click',()=>renderAgent(b.dataset.agent)));
++
++    const dialog=document.querySelector('#case-dialog');
++    function openCase(id){
++      const c=cases[id] || cases['INC-2841'];
++      document.querySelector('#dialog-id').textContent=c.id; document.querySelector('#dialog-title').textContent=c.title;
++      document.querySelector('#verdict-title').textContent=c.verdict; document.querySelector('#verdict-copy').textContent=c.copy;
++      document.querySelector('#audit-procedure').textContent=c.procedure; document.querySelector('#audit-framework').textContent=c.framework; document.querySelector('#audit-policy').textContent=c.policy;
++      document.querySelector('#action-title').textContent=c.action; document.querySelector('#action-copy').textContent=c.actionCopy;
++      document.querySelector('#evidence-list').innerHTML=c.evidence.map((e,i)=>`<div class="evidence-item"><span aria-hidden="true">·</span><div><strong>${e[0]}</strong><span>${e[1]}</span></div><code>0${i+1} · ${e[2]}</code></div>`).join('');
++      dialog.showModal();
++    }
++    document.querySelectorAll('[data-open-case]').forEach(el=>{el.addEventListener('click',()=>openCase(el.dataset.openCase));el.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();openCase(el.dataset.openCase);}})});
++    document.querySelector('.close').addEventListener('click',()=>dialog.close());
++    dialog.addEventListener('click',e=>{if(e.target===dialog)dialog.close();});
++
++    const toast=document.querySelector('.toast');
++    function notify(message){toast.textContent=message;toast.classList.add('show');clearTimeout(window.toastTimer);window.toastTimer=setTimeout(()=>toast.classList.remove('show'),2600);}
++    document.querySelectorAll('[data-scroll]').forEach(b=>b.addEventListener('click',()=>document.querySelector('#'+b.dataset.scroll).scrollIntoView({behavior:'smooth',block:'center'})));
++    document.querySelector('.icon-btn').addEventListener('click',()=>notify('Case observations · September 2026 UTC.'));
++
++
++    const {agent:agentPort, review:humanReview}=createActionRepository();
++    const seeds=[
++      ['ACT-SOC-001','soc','Proposed identity containment','user:demo-admin','Collected sign-in and download records during September 2026 UTC.','IAM-IR-004',['NIST SP 800-61r3','T1078'],'critical','Human recovery: verify identity, restore access under a separate approved procedure.'],
++      ['ACT-ID-001','identity','Proposed session revocation','user:demo-standard','Observed authentication records · September 2026 UTC.','IAM-IR-004',['NIST SP 800-63-4'],'high','Sessions cannot be restored; human-managed reauthentication required.'],
++      ['ACT-VUL-001','vuln','Recommended patch review','gateway:demo-edge','Collected exposure and KEV records; pending review.','VUL-SLA-001',['CISA KEV','NIST SP 800-40'],'critical','Human recovery: restore a verified snapshot and validate service health.'],
++      ['ACT-CO-001','compliance','Proposed evidence review','control:SOC2-CC6.1','Collected evidence for control criteria.','GRC-REVIEW-001',['SOC 2 CC6.1'],'medium','Retain prior evidence and version history; human reviewer may supersede the record.'],
++      ['ACT-SE-001','engineering','Proposed detection change','rule:CR-118','Collected detection records; pending review.','ENG-CHANGE-001',['T1078','NIST SSDF'],'high','Human recovery: restore the prior rule version and validate detection coverage.'],
++      ['ACT-ID-002','identity','Proposed access review','user:demo-dormant','Observed account activity and entitlement records; pending review.','IAM-LP-007',['CIS Control 6'],'medium','Human recovery: restore the recorded entitlement only after separate approval.']
++    ];
++    for(const [action_id,agent_id,action_type,target,justification,rule_id,control_refs,severity,rollback_procedure] of seeds){
++      agentPort.propose({action_id,agent_id,action_type,target,justification,rule_id,control_refs,severity,rollback_procedure,proposed_at:'2026-09-13T20:00:00Z'});
++      agentPort.submit(action_id);
++    }
++    const feed=[
++      ['ACT-SOC-001','SOC Agent collected signal records · September 2026 UTC','Collected observations; response proposal pending review.'],
++      ['ACT-ID-001','Identity Agent collected authentication records · September 2026 UTC','Collected observations; decision pending review under IAM-IR-004.'],
++      ['ACT-VUL-001','Vulnerability Agent collected CVE records · September 2026 UTC','Collected exposure and KEV evidence; pending review.'],
++      ['ACT-CO-001','Compliance Agent collected SOC 2 CC6.1 evidence · September 2026 UTC','Collected control evidence; pending review.'],
++      ['ACT-SE-001','Engineering Agent observed a rule proposal · September 2026 UTC','Observed Sentinel rule proposal with ATT&CK T1078 reference.']
++    ];
++    const caseActions={'INC-2841':'ACT-SOC-001','VUL-9912':'ACT-VUL-001','IAM-2204':'ACT-ID-002'};
++    const esc=value=>String(value).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
++    const actionDialog=document.querySelector('#action-dialog');
++    let selectedAction=null;
++    function renderFeed(){
++      document.querySelector('#action-feed').innerHTML=feed.map(([id,title,copy])=>{
++        const action=agentPort.get(id);
++        return '<article class="activity"><div class="trail"><span class="dot mint"></span></div><div><h4>'+esc(title)+'</h4><p>'+esc(copy)+'</p><a href="#action/'+id+'">'+id+'</a> <span class="status-badge">'+action.status+'</span></div></article>';
++      }).join('');
++      document.querySelectorAll('.case-row[data-open-case]').forEach(row=>row.querySelector('.state').textContent=agentPort.get(caseActions[row.dataset.openCase]).status);
++    }
++    function showAction(id){
++      const record=agentPort.get(id); selectedAction=id;
++      document.querySelector('#action-record-title').textContent=id+' · '+record.status;
++      document.querySelector('#action-record').textContent=JSON.stringify({...record,severity:'Pending review (unassessed proposal metadata withheld)'},null,2);
++      document.querySelectorAll('[data-decision]').forEach(b=>b.disabled=record.status!=='pending_approval');
++      document.querySelector('#record-execution').disabled=record.status!=='approved';
++      document.querySelector('#expire-action').disabled=!['proposed','pending_approval','approved'].includes(record.status);
++      if(!actionDialog.open)actionDialog.showModal();
++    }
++    function navigateAction(){const match=location.hash.match(/^#action\/(ACT-[A-Z]+-\d+)$/);if(match){try{showAction(match[1]);}catch(e){notify(e.message);}}}
++    document.querySelector('#case-action-link').addEventListener('click',()=>{
++      const key=document.querySelector('#dialog-id').textContent.split(' · ')[0];
++      dialog.close(); location.hash='action/'+caseActions[key]; showAction(caseActions[key]);
++    });
++    document.querySelector('#close-action').addEventListener('click',()=>actionDialog.close());
++    document.querySelector('#action-feed').addEventListener('click',e=>{const a=e.target.closest('a');if(a){e.preventDefault();location.hash=a.hash;showAction(a.hash.split('/')[1]);}});
++    const refresh=()=>{renderFeed();showAction(selectedAction);};
++    document.querySelectorAll('[data-decision]').forEach(button=>button.addEventListener('click',()=>{
++      try{
++        humanReview.decide(selectedAction,button.dataset.decision,{
++          approver:document.querySelector('#approver').value,
++          decided_at:new Date().toISOString(),
++          decision_rationale:document.querySelector('#decision-rationale').value
++        });refresh();notify('Decision recorded for this session. No external action performed.');
++      }catch(e){notify(e.message);}
++    }));
++    document.querySelector('#record-execution').addEventListener('click',()=>{
++      try{
++        if(!document.querySelector('#execution-attestation').checked)throw Error('Confirm external execution before recording it.');
++        humanReview.recordExecution(selectedAction,document.querySelector('#execution-time').value);
++        refresh();notify('External execution attestation recorded. This app performed no action.');
++      }catch(e){notify(e.message);}
++    });
++    document.querySelector('#expire-action').addEventListener('click',()=>{
++      try{humanReview.expire(selectedAction);refresh();notify('Action expired. No external action performed.');}catch(e){notify(e.message);}
++    });
++
++    const cycle={cycle_id:'2026-09',cycle_start:'2026-09-01T00:00:00Z',cycle_end:'2026-10-01T00:00:00Z'};
++    const controlRepo=createControlRepository();
++    for(const [control_id,name] of [['CTRL-01','Sign-in review'],['CTRL-02','Exposure review'],['CTRL-03','Access review'],['CTRL-04','SOC 2 CC6.1 evidence'],['CTRL-05','Detection review']])controlRepo.add({control_id,name,...cycle});
++    for(const id of ['CTRL-01','CTRL-04'])controlRepo.agent.collect(id,{evidence_id:id+'-E1',source:'Demo observation record',collected_at:'2026-09-13T20:00:00Z'});
++    const controlDialog=document.querySelector('#control-dialog');let selectedControl;
++    const labels={not_assessed:'Not assessed',evidence_collected:'Evidence collected · pending review',tested_pass:'Tested pass',tested_fail:'Tested fail',exception_approved:'Exception approved'};
++    function renderControls(){
++      const records=controlRepo.agent.list(),counts=coverage(records,cycle.cycle_id);
++      document.querySelector('#overview-title').textContent=coverageStatement(counts);
++      document.querySelector('#coverage-metrics').innerHTML=[['Not yet tested',counts.not_assessed,'unknown'],['Tested',counts.tested,''],['Passed',counts.passed,''],['Failed',counts.failed,'']].map(([label,n,kind])=>'<div class="metric '+kind+'"><div class="metric-value">'+n+'</div><div class="metric-label">'+label+' · 2026-09-01–2026-10-01 UTC</div></div>').join('');
++      document.querySelector('#control-list').innerHTML=sortControls(records).map(record=>{
++        const conclusion=conclusionFor(record);
++        const attribution=conclusion?' · '+esc(conclusion.assessor)+' · '+esc(conclusion.assessed_at):'';
++        return '<button data-control-id="'+record.control_id+'" data-status="'+effectiveStatus(record)+'">'+esc(record.name)+'<small>'+labels[effectiveStatus(record)]+attribution+' · cycle September 2026 UTC</small></button>';
++      }).join('');
++    }
++    function showControl(id){
++      selectedControl=id;const record=controlRepo.agent.get(id),conclusion=conclusionFor(record);
++      document.querySelector('#control-title').textContent=id+' · '+labels[effectiveStatus(record)]+(conclusion?' · '+conclusion.assessor+' · '+conclusion.assessed_at:'');
++      document.querySelector('#control-record').textContent=JSON.stringify(record,null,2);
++      document.querySelectorAll('[data-control-status]').forEach(b=>b.disabled=record.status!=='evidence_collected');
++      if(!controlDialog.open)controlDialog.showModal();
++    }
++    document.querySelector('#control-list').addEventListener('click',e=>{const b=e.target.closest('[data-control-id]');if(b)showControl(b.dataset.controlId);});
++    document.querySelector('#close-control').addEventListener('click',()=>controlDialog.close());
++    document.querySelector('#collect-control').addEventListener('click',()=>{
++      try{controlRepo.agent.collect(selectedControl,{evidence_id:crypto.randomUUID(),source:document.querySelector('#evidence-source').value,collected_at:new Date().toISOString()});renderControls();showControl(selectedControl);notify('Evidence collected. Pending review.');}catch(e){notify(e.message);}
++    });
++    document.querySelectorAll('[data-control-status]').forEach(b=>b.addEventListener('click',()=>{
++      try{controlRepo.reviewer.assess(selectedControl,b.dataset.controlStatus,{assessor:document.querySelector('#control-assessor').value,assessed_at:new Date().toISOString(),assessment_rationale:document.querySelector('#control-rationale').value});renderControls();showControl(selectedControl);notify('Assessment record added to this session.');}catch(e){notify(e.message);}
++    }));
++    renderControls();
++
++    window.addEventListener('hashchange',navigateAction);
++    renderFeed();navigateAction();
++    // Only inspection is exposed to agents. No decision, autonomy, or execution tools.
++    if(document.modelContext?.registerTool){
++      const lifecycle=new AbortController();
++      try{Promise.resolve(document.modelContext.registerTool({
++        name:'inspect_agent_action',title:'Inspect agent action',
++        description:'Read a proposal record. No decision or external action is available.',
++        inputSchema:{type:'object',properties:{action_id:{type:'string',enum:agentPort.list().map(a=>a.action_id)}},required:['action_id'],additionalProperties:false},
++        annotations:{readOnlyHint:true,untrustedContentHint:false},
++        execute(input){if(!input||Object.keys(input).some(k=>k!=='action_id'))throw Error('Invalid input');return agentPort.get(input.action_id);}
++      },{signal:lifecycle.signal})).catch(()=>{});}catch{}
++      window.addEventListener('pagehide',()=>lifecycle.abort(),{once:true});
++    }
++  </script>
++</body>
++</html>
+
