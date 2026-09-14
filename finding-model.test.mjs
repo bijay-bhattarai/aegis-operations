@@ -11,6 +11,8 @@ import {createControlRepository,coverage,coverageStatement} from './src/control-
 import {createDemoOverview,OVERVIEW_AS_OF,sortOverviewFindings} from './src/demo-overview-model.mjs';
 import {ENTRA_FINDING_SEEDS,ENTRA_QUEUE_RULES,ENTRA_SNAPSHOT} from './src/entra-finding-seeds.mjs';
 import {resolveAppRoute} from './src/route-model.mjs';
+import {buildAuditLog} from './src/audit-model.mjs';
+import {createActionRepository} from './src/action-model.mjs';
 
 const artifact=value=>({type:'log_query',locator:'artifact://session/finding/'+value,content_hash:{algorithm:'sha256',value:value.repeat(64)}});
 const evidence=id=>({evidence_id:id,source:'Defender',collected_by:{type:'agent',id:'vuln'},collected_at:'2026-09-01T00:00:00Z',artifact_ref:artifact(id==='E1'?'a':'b')});
@@ -279,15 +281,16 @@ test('dashboard indicators share one explicit as_of and are computed from reposi
  assert.doesNotMatch(html,/id="coverage-metrics"/);
 });
 
-test('sidebar exposes exactly four hash-routed views and removes dead navigation',()=>{
+test('sidebar exposes five hash-routed views and removes dead navigation',()=>{
  const html=fs.readFileSync('src/index.html','utf8'),nav=html.slice(html.indexOf('<nav class="nav">'),html.indexOf('</nav>'));
- assert.equal((nav.match(/<button data-route=/g)||[]).length,4);
- for(const route of ['overview','approvals','findings','controls']){
+ assert.equal((nav.match(/<button data-route=/g)||[]).length,5);
+ for(const route of ['overview','approvals','findings','controls','audit']){
    assert.match(nav,new RegExp('data-route="'+route+'"'));assert.match(html,new RegExp('data-view="'+route+'"'));
  }
+ assert.match(nav,/data-route="controls"[\s\S]*data-route="audit"/);
  assert.doesNotMatch(nav,/AI workforce|Incidents|Exposure|Identity|Governance|data-scroll/);
  assert.match(html,/import \{ resolveAppRoute \} from "\.\/route-model\.mjs"/);
- assert.match(fs.readFileSync('src/route-model.mjs','utf8'),/\^#\(overview\|approvals\|findings\|controls\)/);
+ assert.match(fs.readFileSync('src/route-model.mjs','utf8'),/\^#\(overview\|approvals\|findings\|controls\|audit\)/);
  assert.match(html,/window\.addEventListener\('hashchange',navigateRoute\);navigateRoute\(\)/);
 });
 
@@ -305,6 +308,44 @@ test('drawer routes retain their parent view and use the shared snapshot',()=>{
  assert.match(html,/currentRoute\+'\/finding\/'\+id/);assert.match(html,/currentRoute\+'\/action\/'\+row\.dataset\.approvalId/);assert.match(html,/currentRoute\+'\/control\/'\+b\.dataset\.controlId/);
  assert.match(html,/if\(route\.recordType==='action'\)showAction\(route\.id\)[\s\S]*route\.recordType==='finding'[\s\S]*route\.recordType==='control'/);
  assert.match(html,/findingRepo\.agent\.list\(overviewAsOf\)/);assert.match(html,/findingRepo\.agent\.get\(id,overviewAsOf\)/);
+});
+
+test('audit log unifies model history newest first at the explicit snapshot',()=>{
+ const {findingRepo,controlRepo,as_of}=createDemoOverview(),actionRepo=createActionRepository();
+ const action=actionRepo.agent.propose({action_id:'ACT-AUDIT',agent_id:'identity',action_type:'Proposed access review',target:'user:1',justification:'Observed entitlement',rule_id:'R01',control_refs:['AC-6'],severity:'high',proposed_at:'2026-09-13T20:00:00Z',rollback_procedure:'Human recovery'});
+ actionRepo.agent.submit(action.action_id,{submitted_at:'2026-09-13T20:05:00Z'});
+ const log=buildAuditLog({findingRepo,controlRepo,actionRepo},as_of);
+ assert.equal(log.length,29);assert.ok(log.every((row,index)=>index===0||Date.parse(log[index-1].timestamp)>=Date.parse(row.timestamp)));
+ assert.deepEqual(new Set(log.map(row=>row.record_type)),new Set(['finding','control','action']));
+ assert.deepEqual(new Set(log.map(row=>row.actor.type)),new Set(['agent','person','system']));
+ const actionEvent=log.find(row=>row.audit_id==='action:ACT-AUDIT:2');assert.deepEqual(actionEvent.payload,actionRepo.agent.history(action.action_id,as_of)[1]);
+ assert.throws(()=>log.push({}));assert.throws(()=>{actionEvent.payload.actor.id='changed';});
+});
+
+test('audit supersession keeps originals visible and links both directions',()=>{
+ const actionRepo=createActionRepository(),as_of='2026-09-14T23:00:00Z';
+ const action=actionRepo.agent.propose({action_id:'ACT-SUP',agent_id:'soc',action_type:'Proposed review',target:'case:1',justification:'Observed event',rule_id:'R1',control_refs:['C1'],severity:'medium',proposed_at:'2026-09-13T20:00:00Z',rollback_procedure:'Human recovery'});
+ actionRepo.agent.submit(action.action_id,{submitted_at:'2026-09-13T20:05:00Z'});
+ actionRepo.review.supersede(action.action_id,2,{type:'submitted'},{actor_id:'reviewer',occurred_at:'2026-09-13T20:10:00Z',reason:'Corrected submission record'});
+ const controlRepo={agent:{list:()=>[{control_id:'C1',evidence:[],assessments:[{assessment_id:1,status:'tested_fail',assessor:'reviewer',assessed_at:'2026-09-13T21:00:00Z',supersedes_assessment_id:null},{assessment_id:2,status:'tested_pass',assessor:'reviewer',assessed_at:'2026-09-13T22:00:00Z',supersedes_assessment_id:1}]}]}};
+ const findingRepo={agent:{list:()=>[]}},log=buildAuditLog({findingRepo,controlRepo,actionRepo},as_of);
+ for(const [originalId,replacementId] of [['action:ACT-SUP:2','action:ACT-SUP:3'],['control:C1:assessment:1','control:C1:assessment:2']]){
+   const original=log.find(row=>row.audit_id===originalId),replacement=log.find(row=>row.audit_id===replacementId);
+   assert.equal(original.superseded_by_audit_id,replacementId);assert.equal(replacement.supersedes_audit_id,originalId);
+ }
+ assert.equal(log.find(row=>row.audit_id==='control:C1:assessment:2').event_type,'superseded');
+});
+
+test('audit view exposes filters, human emphasis, payload drawer, and record links',()=>{
+ const html=fs.readFileSync('src/index.html','utf8');
+ assert.match(html,/data-view="audit"[\s\S]*Session-only log; this browser record is not tamper-evident[\s\S]*id="audit-actor-filter"[\s\S]*id="audit-record-filter"[\s\S]*id="audit-list"/);
+ assert.match(html,/\.audit-event-button\.actor-person \{ border-left-color:var\(--amber\);background:/);
+ assert.match(html,/Full event payload[\s\S]*id="audit-event-payload"/);
+ assert.match(html,/data-audit-record-type[\s\S]*data-audit-record-id/);
+ assert.match(html,/location\.hash='audit\/'\+recordLink\.dataset\.auditRecordType\+'\/'\+recordLink\.dataset\.auditRecordId/);
+ assert.match(html,/buildAuditLog\(\{findingRepo,controlRepo,actionRepo:\{agent:agentPort\}\},overviewAsOf\)/);
+ assert.match(html,/row\.actor\.type===actorFilter[\s\S]*row\.record_type===recordFilter/);
+ assert.deepEqual(resolveAppRoute('#audit/event/action:ACT-1:2',{event:['action:ACT-1:2']}),{parent:'audit',recordType:'event',id:'action:ACT-1:2',redirect:false});
 });
 
 test('unknown drawer ids return to their parent route with a visible notice',()=>{

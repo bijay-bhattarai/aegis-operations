@@ -149,6 +149,27 @@
     .approval-meta dd { margin:4px 0 0; color:var(--muted); font-size:.7rem; overflow-wrap:anywhere; }
     .approval-prerequisite { margin:11px 0 0; color:var(--amber); font-size:.7rem; }
     .empty-queue { padding:24px 18px; color:var(--muted); font-size:.78rem; }
+    .audit-filters { display:grid;grid-template-columns:repeat(2,minmax(150px,220px));gap:12px;padding:15px 18px;border-bottom:1px solid var(--line); }
+    .audit-filters label { color:var(--muted);font-size:.68rem;font-weight:700; }
+    .audit-filters select { display:block;width:100%;margin-top:6px;padding:8px 9px;border:1px solid var(--line-strong);border-radius:7px;background:var(--panel-2);color:var(--text);font:inherit; }
+    .audit-header,.audit-event-button { display:grid;grid-template-columns:165px 145px 180px 145px minmax(220px,1fr);gap:14px;align-items:center; }
+    .audit-header { padding:10px 18px;color:var(--quiet);font:700 .62rem ui-monospace,monospace;text-transform:uppercase;letter-spacing:.06em;border-bottom:1px solid var(--line); }
+    .audit-row { border-bottom:1px solid var(--line); }
+    .audit-row:last-child { border-bottom:0; }
+    .audit-event-button { width:100%;border:0;border-left:3px solid transparent;background:transparent;color:var(--text);padding:14px 18px 11px;text-align:left;cursor:pointer; }
+    .audit-event-button:hover { background:rgba(255,255,255,.022); }
+    .audit-event-button.actor-person { border-left-color:var(--amber);background:rgba(242,187,104,.055); }
+    .audit-event-button.actor-agent { border-left-color:var(--mint); }
+    .audit-event-button.actor-system { border-left-color:var(--cyan); }
+    .audit-time,.audit-event-type,.audit-record { font:700 .66rem ui-monospace,monospace;overflow-wrap:anywhere; }
+    .audit-actor { font-size:.72rem;overflow-wrap:anywhere; }
+    .audit-actor strong { display:block;text-transform:capitalize; }
+    .audit-actor span,.audit-summary { color:var(--muted);font-size:.7rem;line-height:1.4; }
+    .audit-summary { overflow:hidden;text-overflow:ellipsis;white-space:nowrap; }
+    .audit-row-links { display:flex;align-items:center;gap:8px;padding:0 18px 11px 491px; }
+    .audit-row-links button { border:0;background:transparent;color:var(--mint);padding:0;cursor:pointer;font:700 .63rem ui-monospace,monospace;text-decoration:underline; }
+    .audit-row-links .superseded { color:var(--red);font:800 .63rem ui-monospace,monospace;text-transform:uppercase; }
+    .audit-row-links .superseding { color:var(--amber);font:800 .63rem ui-monospace,monospace;text-transform:uppercase; }
     .detail-section { border:1px solid var(--line); border-radius:10px; padding:12px; margin:12px 0; }
     .detail-section h3 { margin:0 0 6px; font-size:.78rem; }
     .detail-section p { margin:0; color:var(--muted); font-size:.72rem; line-height:1.5; }
@@ -192,10 +213,11 @@
     }
     @media (max-width: 720px) {
       .app{display:block}.sidebar{position:fixed;height:auto;left:10px;right:10px;bottom:10px;top:auto;border:1px solid var(--line);border-radius:14px;padding:6px;background:rgba(7,16,15,.96)}
-      .brand,.nav-label,.side-bottom{display:none}.nav{grid-template-columns:repeat(4,1fr);gap:2px}.nav button{padding:9px 4px}.nav button span:not(.nav-icon):not(.nav-count){display:none}.nav-icon{border:0;font-size:.65rem}.nav-count{margin-left:0;padding:1px 4px}
+      .brand,.nav-label,.side-bottom{display:none}.nav{grid-template-columns:repeat(5,1fr);gap:2px}.nav button{padding:9px 4px}.nav button span:not(.nav-icon):not(.nav-count){display:none}.nav-icon{border:0;font-size:.65rem}.nav-count{margin-left:0;padding:1px 4px}
       main{padding:0 14px 90px}.topbar{height:66px;margin-bottom:14px}.scope{display:none}.hero{padding:17px}.hero-top{display:block}.trust{display:inline-block;margin-top:14px}.metric-row{grid-template-columns:repeat(2,1fr);gap:14px}.metric-value{font-size:1.2rem}
       .agent-detail{grid-template-columns:1fr}.frameworks{margin-top:4px}.case-row{grid-template-columns:85px 115px minmax(150px,1fr) 76px;padding:12px 14px}.case-row>*:nth-child(5),.case-row>*:nth-child(6),.case-row>*:nth-child(7){display:none}.case-header{display:none}.overview-finding-row{grid-template-columns:85px 115px minmax(150px,1fr) 76px}.overview-finding-row>*:nth-child(5){display:none}.approval-meta{grid-template-columns:repeat(2,minmax(0,1fr))}.filter-bar{grid-template-columns:repeat(2,1fr)}.topbar h1{font-size:1rem}.eyebrow{font-size:.62rem}.agent-list{grid-template-columns:repeat(5,130px)}
       .audit-grid{grid-template-columns:1fr}.action-buttons{flex-direction:column}.btn{width:100%}.toast{left:14px;right:14px;bottom:80px;text-align:center}
+      .audit-header{display:none}.audit-event-button{grid-template-columns:1fr 1fr;padding:12px 14px}.audit-event-button .audit-summary{grid-column:1/-1}.audit-row-links{padding:0 14px 10px}.audit-filters{grid-template-columns:1fr 1fr}
     }
     @media (prefers-reduced-motion:reduce){*{scroll-behavior:auto!important;transition:none!important}.btn:hover{transform:none}}
 
@@ -218,6 +240,7 @@
     #control-dialog label{display:block;margin-top:12px}
     #control-dialog input,#control-dialog textarea,#control-dialog select{display:block;width:100%;padding:10px;background:var(--panel);color:var(--text);border:1px solid var(--line);font:inherit}
     #control-record{white-space:pre-wrap;overflow-wrap:anywhere}
+    #audit-event-payload{white-space:pre-wrap;overflow-wrap:anywhere;font-size:.78rem}
     #control-list small{display:block;margin-top:4px;font-size:.72rem;color:var(--muted)}
     .control-header{display:grid;grid-template-columns:minmax(180px,1.3fr) 180px 150px 190px 90px;gap:14px;padding:10px 14px;color:var(--quiet);font:700 .62rem ui-monospace,monospace;text-transform:uppercase;letter-spacing:.06em;border-bottom:1px solid var(--line)}
     .agent-task{height:auto}.icon-btn{flex-shrink:0}
@@ -238,6 +261,7 @@
         <button data-route="approvals"><span class="nav-icon">AP</span><span>Approvals</span><span class="nav-count" id="approval-count">0</span></button>
         <button data-route="findings"><span class="nav-icon">FI</span><span>Findings</span></button>
         <button data-route="controls"><span class="nav-icon">CO</span><span>Controls</span></button>
+        <button data-route="audit"><span class="nav-icon">AU</span><span>Audit</span></button>
       </nav>
       <div class="side-bottom">
         <div class="system-card"><div class="system-row"><span class="pulse"></span><span>Proposal-only model</span></div><p>Agents collect evidence and propose actions for review.</p></div>
@@ -308,6 +332,19 @@
           <div id="control-list"></div>
         </section>
       </section>
+
+      <section class="view" data-view="audit" hidden aria-labelledby="audit-title">
+        <div class="view-context">Snapshot as of <time data-as-of></time> · Session-only log; this browser record is not tamper-evident.</div>
+        <section class="panel">
+          <div class="panel-head"><h3 id="audit-title">Audit event stream</h3><span id="audit-summary">Model events at the shared snapshot</span></div>
+          <div class="audit-filters" aria-label="Audit filters">
+            <label>Actor type<select id="audit-actor-filter"><option value="all">All actor types</option><option value="agent">Agent</option><option value="person">Person</option><option value="system">System</option></select></label>
+            <label>Record type<select id="audit-record-filter"><option value="all">All record types</option><option value="finding">Finding</option><option value="control">Control</option><option value="action">Agent action</option></select></label>
+          </div>
+          <div class="audit-header"><span>Timestamp</span><span>Actor</span><span>Event type</span><span>Record</span><span>Change</span></div>
+          <div id="audit-list"></div>
+        </section>
+      </section>
     </main>
   </div>
 
@@ -367,6 +404,16 @@
       <p>Evidence collection is not a test. An approved exception is not a pass.</p>
     </div>
   </dialog>
+  <dialog class="drawer" id="audit-dialog" aria-labelledby="audit-event-title">
+    <div class="drawer-head"><div><div class="eyebrow" id="audit-event-id">Audit event</div><h2 id="audit-event-title">Event payload</h2></div><button class="close" id="close-audit" aria-label="Close audit event">×</button></div>
+    <div class="drawer-body">
+      <p>Derived from the model’s immutable history at the shared snapshot. This session-only browser record is not tamper-evident.</p>
+      <div class="audit-grid"><div class="audit"><small>Timestamp</small><span id="audit-event-time"></span></div><div class="audit"><small>Actor</small><span id="audit-event-actor"></span></div><div class="audit"><small>Event type</small><span id="audit-event-type"></span></div><div class="audit"><small>Record</small><span id="audit-event-record"></span></div></div>
+      <div class="detail-section"><h3>Change summary</h3><p id="audit-event-summary"></p></div>
+      <button class="btn" id="audit-open-record">Open related record</button>
+      <details open><summary>Full event payload</summary><pre id="audit-event-payload"></pre></details>
+    </div>
+  </dialog>
   <div class="toast" role="status" aria-live="polite"></div>
 
   <script type="module">
@@ -376,6 +423,7 @@
     import { findingIndicators, Severity } from "./finding-model.mjs";
     import { createDemoOverview, OVERVIEW_AS_OF as overviewAsOf, sortOverviewFindings } from "./demo-overview-model.mjs";
     import { resolveAppRoute } from "./route-model.mjs";
+    import { buildAuditLog } from "./audit-model.mjs";
     const agents = {
       soc: { title: 'SOC Agent', copy: 'Correlates identity, endpoint, cloud, and network evidence, then drafts response proposals for human review.', procedure: 'Active procedure: Account takeover triage v3.2', frameworks: ['NIST SP 800-61r3', 'MITRE ATT&CK', 'CIS Control 13', 'Internal IR-01'] },
       vuln: { title: 'Vulnerability Agent', copy: 'Evaluates exposure, exploit, asset, and control evidence to prioritize human review.', procedure: 'Active procedure: Risk-based remediation v2.8', frameworks: ['CISA KEV', 'CVSS v4.0', 'NIST SP 800-40', 'CIS Control 7'] },
@@ -480,7 +528,7 @@
     }
     document.querySelector('#close-action').addEventListener('click',()=>{location.hash=currentRoute;});
     document.querySelector('#approval-list').addEventListener('click',event=>{const row=event.target.closest('[data-approval-id]');if(row)location.hash=currentRoute+'/action/'+row.dataset.approvalId;});
-    const refresh=()=>{renderApprovalQueue();if(selectedAction)showAction(selectedAction);};
+    const refresh=()=>{renderApprovalQueue();renderAudit();if(selectedAction)showAction(selectedAction);};
     document.querySelectorAll('[data-decision]').forEach(button=>button.addEventListener('click',()=>{
       try{
         humanReview.decide(selectedAction,button.dataset.decision,{
@@ -558,34 +606,65 @@
           evidence_id:crypto.randomUUID(),source:document.querySelector('#evidence-source').value,collected_by,collected_at:new Date().toISOString(),
           artifact_ref:{type:document.querySelector('#artifact-type').value,locator:document.querySelector('#artifact-locator').value,content_hash:{algorithm:'sha256',value:document.querySelector('#artifact-hash').value}}
         });
-        renderControls();showControl(selectedControl);notify('Evidence reference collected. Artifact remains unverified because this demo has no artifact resolver.');
+        renderControls();renderAudit();showControl(selectedControl);notify('Evidence reference collected. Artifact remains unverified because this demo has no artifact resolver.');
       }catch(e){notify(e.message);}
     });
     document.querySelectorAll('[data-control-status]').forEach(b=>b.addEventListener('click',()=>{
-      try{controlRepo.reviewer.assess(selectedControl,b.dataset.controlStatus,{assessor:document.querySelector('#control-assessor').value,assessed_at:new Date().toISOString(),assessment_rationale:document.querySelector('#control-rationale').value});renderControls();showControl(selectedControl);notify('Assessment record added to this session.');}catch(e){notify(e.message);}
+      try{controlRepo.reviewer.assess(selectedControl,b.dataset.controlStatus,{assessor:document.querySelector('#control-assessor').value,assessed_at:new Date().toISOString(),assessment_rationale:document.querySelector('#control-rationale').value});renderControls();renderAudit();showControl(selectedControl);notify('Assessment record added to this session.');}catch(e){notify(e.message);}
     }));
-    const routeTitles={overview:'Operations overview',approvals:'Approvals',findings:'Findings',controls:'Controls'};
+    const auditDialog=document.querySelector('#audit-dialog');let auditRows=[],selectedAuditEvent=null;
+    function renderAudit(){
+      auditRows=buildAuditLog({findingRepo,controlRepo,actionRepo:{agent:agentPort}},overviewAsOf);
+      const actorFilter=document.querySelector('#audit-actor-filter').value,recordFilter=document.querySelector('#audit-record-filter').value;
+      const filtered=auditRows.filter(row=>(actorFilter==='all'||row.actor.type===actorFilter)&&(recordFilter==='all'||row.record_type===recordFilter));
+      document.querySelector('#audit-summary').textContent=filtered.length+' of '+auditRows.length+' model events';
+      document.querySelector('#audit-list').innerHTML=filtered.length?filtered.map(row=>
+        '<div class="audit-row">'+
+          '<button class="audit-event-button actor-'+esc(row.actor.type)+'" data-audit-event-id="'+esc(row.audit_id)+'"><span class="audit-time">'+esc(row.timestamp)+'</span><span class="audit-actor"><strong>'+esc(row.actor.type)+'</strong><span>'+esc(row.actor.id)+'</span></span><span class="audit-event-type">'+esc(titleCase(row.event_type))+'</span><span class="audit-record">'+esc(titleCase(row.record_type))+' · '+esc(row.record_id)+'</span><span class="audit-summary">'+esc(row.summary)+'</span></button>'+
+          '<div class="audit-row-links"><button data-audit-record-type="'+esc(row.record_type)+'" data-audit-record-id="'+esc(row.record_id)+'">Open '+esc(row.record_id)+'</button>'+
+          (row.superseded_by_audit_id?'<span class="superseded">Superseded</span><button data-audit-event-id="'+esc(row.superseded_by_audit_id)+'">View replacement</button>':'')+
+          (row.supersedes_audit_id?'<span class="superseding">Supersedes prior event</span><button data-audit-event-id="'+esc(row.supersedes_audit_id)+'">View original</button>':'')+'</div></div>'
+      ).join(''):'<p class="empty-queue">No audit events match these filters.</p>';
+    }
+    function showAuditEvent(id){
+      const row=auditRows.find(item=>item.audit_id===id);selectedAuditEvent=row;
+      document.querySelector('#audit-event-id').textContent=row.audit_id;document.querySelector('#audit-event-title').textContent=titleCase(row.event_type);
+      document.querySelector('#audit-event-time').textContent=row.timestamp;document.querySelector('#audit-event-actor').textContent=titleCase(row.actor.type)+': '+row.actor.id;
+      document.querySelector('#audit-event-type').textContent=titleCase(row.event_type);document.querySelector('#audit-event-record').textContent=titleCase(row.record_type)+': '+row.record_id;
+      document.querySelector('#audit-event-summary').textContent=row.summary;document.querySelector('#audit-event-payload').textContent=JSON.stringify(row.payload,null,2);
+      if(!auditDialog.open)auditDialog.showModal();
+    }
+    document.querySelector('#audit-list').addEventListener('click',event=>{
+      const recordLink=event.target.closest('[data-audit-record-id]');if(recordLink){location.hash='audit/'+recordLink.dataset.auditRecordType+'/'+recordLink.dataset.auditRecordId;return;}
+      const eventLink=event.target.closest('[data-audit-event-id]');if(eventLink)location.hash='audit/event/'+eventLink.dataset.auditEventId;
+    });
+    document.querySelector('#audit-open-record').addEventListener('click',()=>{if(selectedAuditEvent)location.hash='audit/'+selectedAuditEvent.record_type+'/'+selectedAuditEvent.record_id;});
+    document.querySelector('#close-audit').addEventListener('click',()=>{location.hash=currentRoute;});
+    for(const filter of document.querySelectorAll('.audit-filters select'))filter.addEventListener('change',renderAudit);
+    const routeTitles={overview:'Operations overview',approvals:'Approvals',findings:'Findings',controls:'Controls',audit:'Audit'};
     function navigateRoute(){
       const route=resolveAppRoute(location.hash,{
         action:agentPort.list(overviewAsOf).map(record=>record.action_id),
         finding:findingRepo.agent.list(overviewAsOf).map(record=>record.finding_id),
-        control:controlRepo.agent.list().map(record=>record.control_id)
+        control:controlRepo.agent.list().map(record=>record.control_id),
+        event:auditRows.map(row=>row.audit_id)
       });
       if(route.redirect){location.hash=route.parent;if(route.notice)notify(route.notice);return;}
       currentRoute=route.parent;
       document.querySelectorAll('[data-view]').forEach(view=>{view.hidden=view.dataset.view!==currentRoute;});
       document.querySelectorAll('[data-route]').forEach(button=>{const active=button.dataset.route===currentRoute;button.classList.toggle('active',active);if(active)button.setAttribute('aria-current','page');else button.removeAttribute('aria-current');});
       document.querySelector('#view-title').textContent=routeTitles[currentRoute];
-      for(const openDialog of [dialog,actionDialog,controlDialog])if(openDialog.open)openDialog.close();
+      for(const openDialog of [dialog,actionDialog,controlDialog,auditDialog])if(openDialog.open)openDialog.close();
       if(route.recordType==='action')showAction(route.id);
       else if(route.recordType==='finding')openFinding(route.id);
       else if(route.recordType==='control')showControl(route.id);
+      else if(route.recordType==='event')showAuditEvent(route.id);
       window.scrollTo(0,0);
     }
     document.querySelectorAll('[data-as-of]').forEach(node=>{node.textContent=overviewAsOf;});
-    for(const routedDialog of [dialog,actionDialog,controlDialog])routedDialog.addEventListener('cancel',event=>{event.preventDefault();location.hash=currentRoute;});
+    for(const routedDialog of [dialog,actionDialog,controlDialog,auditDialog])routedDialog.addEventListener('cancel',event=>{event.preventDefault();location.hash=currentRoute;});
     for(const filter of document.querySelectorAll('.filter-bar select'))filter.addEventListener('change',renderFindings);
-    renderControls();renderFindings();renderApprovalQueue();
+    renderControls();renderFindings();renderApprovalQueue();renderAudit();
     window.addEventListener('hashchange',navigateRoute);navigateRoute();
     // Only inspection is exposed to agents. No decision, autonomy, or execution tools.
     if(document.modelContext?.registerTool){

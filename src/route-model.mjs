@@ -1,6 +1,6 @@
-const ROUTE_PATTERN=/^#(overview|approvals|findings|controls)(?:\/(action|finding|control)\/([^/]*))?$/;
+const ROUTE_PATTERN=/^#(overview|approvals|findings|controls|audit)(?:\/(action|finding|control|event)\/([^/]*))?$/;
 
-const LABELS={action:'Action',finding:'Finding',control:'Control'};
+const LABELS={action:'Action',finding:'Finding',control:'Control',event:'Audit event'};
 
 export function resolveAppRoute(hash,recordIds={}){
   const match=String(hash).match(ROUTE_PATTERN);

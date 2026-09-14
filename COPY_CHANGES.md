@@ -244,3 +244,19 @@ Unknown or incomplete drawer links return to their parent view and announce “F
 Proposed actions explain that the proposing agent must submit them before a reviewer can decide. Approval copy states that the decision performs no action; external execution remains a separate human attestation.
 
 Action expiry now asks for the actor type, actor identity, timestamp, and reason. External execution attestation now asks for the executor identity. These self-reported inputs provide event attribution in the session-only action history; they do not authenticate either person or system identities.
+
+## Audit view
+
+- Audit
+- Audit event stream
+- Snapshot as of
+- Session-only log; this browser record is not tamper-evident.
+- Actor type / All actor types
+- Record type / All record types
+- Timestamp / Actor / Event type / Record / Change
+- Superseded / View replacement
+- Supersedes prior event / View original
+- Open related record
+- Full event payload
+
+Person-attributed events use the strongest visual treatment in the stream. Audit rows are display projections of existing finding, control, and action history; the interface does not store a separate audit record.
