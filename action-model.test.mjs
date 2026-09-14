@@ -1,6 +1,7 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
+import path from 'node:path';
 import vm from 'node:vm';
 import {AgentAction,AGENT_IDS,ACTION_STATUSES,createActionRepository} from './src/action-model.mjs';
 const proposal=agent_id=>({action_id:'ACT-1',agent_id,action_type:'Proposed review',target:'demo',justification:'Evidence',rule_id:'RULE-1',control_refs:['CONTROL-1'],severity:'high',proposed_at:'2026-09-13T20:00:00Z',rollback_procedure:'Human recovery'});
@@ -55,4 +56,17 @@ test('UI syntax and no outbound writer APIs or agent decision tools',()=>{
  assert.doesNotMatch(h,/set_default_autonomy|decide_security_case|data-mode|data-action=/);
  assert.match(h,/connect-src 'none'/);assert.match(h,/form-action 'none'/);
  assert.match(h,/action\.status/);assert.match(h,/href="#action\//);
+});
+test('entire src tree contains no fetch, XMLHttpRequest, or sendBeacon',()=>{
+ const files=[];
+ const visit=directory=>{
+  for(const entry of fs.readdirSync(directory,{withFileTypes:true})){
+   const file=path.join(directory,entry.name);
+   if(entry.isDirectory())visit(file);else if(entry.isFile())files.push(file);
+  }
+ };
+ visit('src');
+ const forbidden=/\bfetch\s*\(|\bXMLHttpRequest\b|\bsendBeacon\b/;
+ const violations=files.filter(file=>forbidden.test(fs.readFileSync(file,'utf8')));
+ assert.deepEqual(violations,[],`Outbound transport primitive found in: ${violations.join(', ')}`);
 });
