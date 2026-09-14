@@ -241,9 +241,9 @@ test('cycle coverage excludes exceptions and evidence-only from tested count; un
  assert.equal(coverage(r.agent.list(),'2026-10').in_scope,0);
  assert.deepEqual(sortControls(r.agent.list()).map(r=>r.control_id),['C1','C2','C3','C5','C4']);
 });
-test('agent-generated case and feed text has no forbidden verdict vocabulary',()=>{
+test('agent-generated role and feed text has no forbidden verdict vocabulary',()=>{
  const h=fs.readFileSync('src/index.html','utf8');
- const content=h.slice(h.indexOf('const agents ='),h.indexOf('const caseActions='));
+ const content=h.slice(h.indexOf('const agents ='),h.indexOf('const actionStatusLabels='));
  assert.doesNotMatch(content,/\b(compliant|effective|secure|within policy|validated|operating correctly|all clear|nominal)\b/i);
  assert.doesNotMatch(h,/97%|94%|91%|99\.2%|87 \/ 100/);
  assert.match(h,/statement=coverageStatement\(controlCounts\)/);

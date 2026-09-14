@@ -4,6 +4,15 @@ import {createFindingRepository} from './finding-model.mjs';
 
 export const OVERVIEW_AS_OF='2026-09-14T23:00:00Z';
 export const OVERVIEW_CYCLE=Object.freeze({cycle_id:'2026-09',cycle_start:'2026-09-01T00:00:00Z',cycle_end:'2026-10-01T00:00:00Z'});
+const severityRank=Object.freeze({critical:4,high:3,medium:2,low:1});
+
+export function sortOverviewFindings(findings){
+  return [...findings].sort((left,right)=>
+    Number(right.sla_status==='overdue')-Number(left.sla_status==='overdue')||
+    severityRank[right.severity]-severityRank[left.severity]||
+    left.finding_id.localeCompare(right.finding_id)
+  );
+}
 
 export function createDemoOverview(){
   const evidenceRepo=createEvidenceRepository(),controlRepo=createControlRepository({evidenceRepository:evidenceRepo});

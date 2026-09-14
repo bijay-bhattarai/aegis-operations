@@ -178,3 +178,15 @@ The accompanying `refactor.diff` includes every changed, deleted, and added stri
 | Observed rule proposal · September 2026 UTC | Drafts detection changes with rollback guidance |
 
 Agent tiles now describe each role’s work: correlating operational evidence, prioritizing exposure evidence with SSVC, reviewing identity evidence, mapping evidence to controls, and drafting detection changes. Repeated cycle labels were removed from the overview, agent tiles, proposal feed, and control rows; evidence records retain dates where they establish provenance.
+
+## Finding table and shared snapshot
+
+| Previous | Current |
+|---|---|
+| Three repeated `As of` labels in the indicator cards | One `Snapshot as of` timestamp above the indicators |
+| Case observations | Finding records |
+| Case / Observation / Assessment / Window / Status | Finding / Title / Severity / State / Owner / SLA status |
+| Hardcoded INC-2841, VUL-9912, and IAM-2204 rows | Finding projections from the shared demo repository |
+| Within sla | Within SLA |
+
+Finding rows are ordered with overdue records first, then by computed severity. Each row presents the owner and SLA state from the projection at the shared snapshot.

@@ -7,7 +7,7 @@ import {
 } from './src/finding-model.mjs';
 import {createEvidenceRepository} from './src/evidence-model.mjs';
 import {createControlRepository,coverage,coverageStatement} from './src/control-model.mjs';
-import {createDemoOverview,OVERVIEW_AS_OF} from './src/demo-overview-model.mjs';
+import {createDemoOverview,OVERVIEW_AS_OF,sortOverviewFindings} from './src/demo-overview-model.mjs';
 
 const artifact=value=>({type:'log_query',locator:'artifact://session/finding/'+value,content_hash:{algorithm:'sha256',value:value.repeat(64)}});
 const evidence=id=>({evidence_id:id,source:'Defender',collected_by:{type:'agent',id:'vuln'},collected_at:'2026-09-01T00:00:00Z',artifact_ref:artifact(id==='E1'?'a':'b')});
@@ -235,8 +235,24 @@ test('dashboard indicators share one explicit as_of and are computed from reposi
  assert.match(html,/const findingCounts=findingIndicators\(findingRepo\.agent\.list\(overviewAsOf\),overviewAsOf\)/);
  assert.match(html,/const controlCounts=coverage\(records,cycle\.cycle_id\),statement=coverageStatement\(controlCounts\)/);
  for(const indicator of ['control-coverage','open-findings','overdue-findings'])assert.match(html,new RegExp('data-indicator="'+indicator+'"'));
- assert.equal((html.match(/<div class="metric-label">As of /g)||[]).length,3);
+ assert.equal((html.match(/Snapshot as of/g)||[]).length,1);
+ assert.match(html,/<time id="overview-as-of"><\/time>/);
+ assert.match(html,/#overview-as-of'\)\.textContent=overviewAsOf/);
+ assert.doesNotMatch(html,/<div class="metric-label">As of /);
  assert.doesNotMatch(html,/id="coverage-metrics"/);
+});
+
+test('finding table projects repository records and sorts overdue before severity',()=>{
+ const html=fs.readFileSync('src/index.html','utf8'),{findingRepo,as_of}=createDemoOverview();
+ const ordered=sortOverviewFindings(findingRepo.agent.list(as_of));
+ assert.deepEqual(ordered.map(finding=>finding.finding_id),['F-DEMO-CRITICAL','F-DEMO-HIGH','F-DEMO-MEDIUM','F-DEMO-CLOSED','F-DEMO-LOW']);
+ assert.deepEqual(ordered.slice(0,3).map(finding=>finding.sla_status),['overdue','overdue','overdue']);
+ for(const finding of ordered)for(const field of ['finding_id','title','severity','current_state','owner','sla_status'])assert.ok(finding[field]);
+ assert.match(html,/<span>Finding<\/span><span>Title<\/span><span>Severity<\/span><span>State<\/span><span>Owner<\/span><span>SLA status<\/span>/);
+ assert.match(html,/sortOverviewFindings\(findingRepo\.agent\.list\(overviewAsOf\)\)/);
+ assert.match(html,/within_sla:'Within SLA'/);
+ assert.match(html,/finding\.finding_id[\s\S]*finding\.title[\s\S]*finding\.severity[\s\S]*finding\.current_state[\s\S]*finding\.owner[\s\S]*finding\.sla_status/);
+ assert.doesNotMatch(html,/INC-2841|VUL-9912|IAM-2204|<span>Assessment<\/span>|<span>Window<\/span>|Current window/);
 });
 
 test('dashboard demo findings cover every severity, closure, overdue state and expired acceptance',()=>{

@@ -115,8 +115,9 @@
     .procedure small { display:block; color:var(--mint); font:700 .65rem ui-monospace,monospace; margin-bottom:5px; text-transform:uppercase; }
     .frameworks { display:flex; flex-wrap:wrap; gap:6px; align-content:start; }
     .chip { border:1px solid var(--line); background:var(--panel-2); color:#b4c7c2; border-radius:6px; padding:6px 7px; font:600 .61rem ui-monospace,monospace; }
+    .snapshot-time { margin:14px 0 2px; color:var(--quiet); font:700 .68rem ui-monospace,monospace; }
     .cases-panel { margin-top:18px; overflow:hidden; }
-    .case-row { display:grid; grid-template-columns:105px minmax(260px,1.5fr) 110px 120px 96px; gap:14px; align-items:center; border-bottom:1px solid var(--line); padding:13px 18px; cursor:pointer; }
+    .case-row { display:grid; grid-template-columns:125px minmax(220px,1.5fr) 85px 75px 150px 95px; gap:14px; align-items:center; border-bottom:1px solid var(--line); padding:13px 18px; cursor:pointer; }
     .case-row:last-child { border-bottom:0; }
     .case-row:not(.case-header):hover { background:rgba(255,255,255,.022); }
     .case-header { color:var(--quiet); font:700 .62rem ui-monospace,monospace; text-transform:uppercase; letter-spacing:.06em; cursor:default; padding-top:10px; padding-bottom:10px; }
@@ -127,6 +128,7 @@
     .severity.critical{color:var(--red)} .severity.high{color:var(--amber)} .severity.medium{color:var(--cyan)}
     .confidence { font:700 .72rem ui-monospace,monospace; }
     .state { color:var(--muted); font-size:.7rem; }
+    .sla-overdue { color:var(--red); font-weight:800; }
     .governance { margin-top:18px; display:grid; grid-template-columns:minmax(0,1fr) auto; align-items:center; gap:18px; padding:17px 18px; }
     .gov-title { display:flex; gap:11px; align-items:flex-start; }
     .gov-shield { width:31px;height:31px;display:grid;place-items:center;border:1px solid rgba(110,242,197,.25);border-radius:9px;color:var(--mint);background:rgba(110,242,197,.05); }
@@ -174,7 +176,7 @@
       .app{display:block}.sidebar{position:fixed;height:auto;left:10px;right:10px;bottom:10px;top:auto;border:1px solid var(--line);border-radius:14px;padding:6px;background:rgba(7,16,15,.96)}
       .brand,.nav-label,.side-bottom{display:none}.nav{grid-template-columns:repeat(6,1fr);gap:2px}.nav button{padding:9px 4px}.nav button span:not(.nav-icon){display:none}.nav-icon{border:0;font-size:.65rem}
       main{padding:0 14px 90px}.topbar{height:66px;margin-bottom:14px}.scope{display:none}.hero{padding:17px}.hero-top{display:block}.trust{display:inline-block;margin-top:14px}.metric-row{grid-template-columns:repeat(2,1fr);gap:14px}.metric-value{font-size:1.2rem}
-      .activity-list{display:block}.activity:nth-child(5){display:grid}.agent-detail{grid-template-columns:1fr}.frameworks{margin-top:4px}.case-row{grid-template-columns:86px 1fr 76px;padding:12px 14px}.case-row>*:nth-child(4),.case-row>*:nth-child(5){display:none}.case-header{display:none}.governance{grid-template-columns:1fr}.modes{overflow:auto}.modes button{flex:1}.activity-panel{display:none}.topbar h1{font-size:1rem}.eyebrow{font-size:.62rem}.agent-list{grid-template-columns:repeat(5,130px)}
+      .activity-list{display:block}.activity:nth-child(5){display:grid}.agent-detail{grid-template-columns:1fr}.frameworks{margin-top:4px}.case-row{grid-template-columns:100px 1fr 76px;padding:12px 14px}.case-row>*:nth-child(4),.case-row>*:nth-child(5),.case-row>*:nth-child(6){display:none}.case-header{display:none}.governance{grid-template-columns:1fr}.modes{overflow:auto}.modes button{flex:1}.activity-panel{display:none}.topbar h1{font-size:1rem}.eyebrow{font-size:.62rem}.agent-list{grid-template-columns:repeat(5,130px)}
       .audit-grid{grid-template-columns:1fr}.action-buttons{flex-direction:column}.btn{width:100%}.toast{left:14px;right:14px;bottom:80px;text-align:center}
     }
     @media (prefers-reduced-motion:reduce){*{scroll-behavior:auto!important;transition:none!important}.btn:hover{transform:none}}
@@ -219,7 +221,7 @@
       <nav class="nav">
         <button class="active"><span class="nav-icon">OV</span><span>Overview</span></button>
         <button data-scroll="agents"><span class="nav-icon">AI</span><span>AI workforce</span></button>
-        <button data-open-case="INC-2841"><span class="nav-icon">IN</span><span>Incidents</span></button>
+        <button data-scroll="cases"><span class="nav-icon">IN</span><span>Findings</span></button>
         <button data-scroll="cases"><span class="nav-icon">VU</span><span>Exposure</span></button>
         <button data-scroll="governance"><span class="nav-icon">ID</span><span>Identity</span></button>
         <button data-scroll="governance"><span class="nav-icon">GV</span><span>Governance</span></button>
@@ -241,6 +243,7 @@
             <div><div class="eyebrow">Today’s review</div><h2 id="overview-title">Welcome back, Bijay.</h2><p>Review control coverage, open findings, and overdue work at the shared snapshot below.</p></div>
             <div class="trust">Session-only demo</div>
           </div>
+          <div class="snapshot-time">Snapshot as of <time id="overview-as-of"></time></div>
 <div class="metric-row" id="overview-indicators"></div><section class="panel" id="control-panel"><div class="panel-head"><h3>Control records</h3><span>Needs assessment first</span></div><div id="control-list"></div></section>
         </section>
 
@@ -262,11 +265,9 @@
       </div>
 
       <section class="panel cases-panel" id="cases" aria-labelledby="cases-title">
-        <div class="panel-head"><h3 id="cases-title">Case observations</h3><span>Evidence window · September 2026 UTC</span></div>
-        <div class="case-row case-header"><span>Case</span><span>Observation</span><span>Assessment</span><span>Window</span><span>Status</span></div>
-        <div class="case-row" role="button" tabindex="0" data-open-case="INC-2841"><span class="case-id">INC-2841</span><span class="case-title">Microsoft 365 sign-in and download records</span><span>Pending review</span><span>Current window</span><span class="state">Awaiting approval</span></div>
-        <div class="case-row" role="button" tabindex="0" data-open-case="VUL-9912"><span class="case-id">VUL-9912</span><span class="case-title">Gateway inventory and exposure records</span><span>Pending review</span><span>Current window</span><span class="state">Assigned for review</span></div>
-        <div class="case-row" role="button" tabindex="0" data-open-case="IAM-2204"><span class="case-id">IAM-2204</span><span class="case-title">Account activity and entitlement records</span><span>Pending review</span><span>Current window</span><span class="state">Needs review</span></div>
+        <div class="panel-head"><h3 id="cases-title">Finding records</h3><span>Projected at the shared snapshot</span></div>
+        <div class="case-row case-header"><span>Finding</span><span>Title</span><span>Severity</span><span>State</span><span>Owner</span><span>SLA status</span></div>
+        <div id="finding-list"></div>
       </section>
 
       <section class="panel governance" id="governance" aria-labelledby="gov-heading">
@@ -277,12 +278,11 @@
   </div>
 
   <dialog class="drawer" id="case-dialog">
-    <div class="drawer-head"><div><div class="eyebrow" id="dialog-id">INC-2841 · SOC + Identity</div><h2 id="dialog-title">Sign-in and download observations</h2></div><button class="close" aria-label="Close case">×</button></div>
+    <div class="drawer-head"><div><div class="eyebrow" id="dialog-id">Finding record</div><h2 id="dialog-title">Finding details</h2></div><button class="close" aria-label="Close finding">×</button></div>
     <div class="drawer-body">
-      <div class="verdict"><div><strong id="verdict-title">Pending review</strong><p id="verdict-copy">Sign-in, authentication-method, download, and threat-feed records collected during September 2026 UTC.</p></div></div>
+      <div class="verdict"><div><strong id="verdict-title">Finding state</strong><p id="verdict-copy">Severity and SLA status at the shared snapshot.</p></div></div>
       <div class="evidence" id="evidence-list"></div>
-      <div class="audit-grid"><div class="audit"><small>Procedure</small><span id="audit-procedure">Identity Compromise Playbook v3.2</span></div><div class="audit"><small>Framework mapping</small><span id="audit-framework">MITRE ATT&amp;CK T1078 · NIST SP 800-61r3</span></div><div class="audit"><small>Policy gate</small><span id="audit-policy">IAM-IR-004 · Human approval required</span></div><div class="audit"><small>Evidence window</small><span>September 2026 UTC · demo source records</span></div></div>
-      <div class="action-box"><h3 id="action-title">Proposed identity containment</h3><p id="action-copy">Proposed session revocation, temporary sign-in restriction, and incident documentation. Human review required; no response will be performed by this app.</p><div class="action-buttons"><button class="btn primary" id="case-action-link">View action record</button></div></div>
+      <div class="audit-grid"><div class="audit"><small>Rule</small><span id="audit-rule"></span></div><div class="audit"><small>Owner</small><span id="audit-owner"></span></div><div class="audit"><small>Remediate by</small><span id="audit-deadline"></span></div><div class="audit"><small>Snapshot</small><span id="audit-snapshot"></span></div></div>
     </div>
   </dialog>
   <dialog class="drawer" id="action-dialog" aria-labelledby="action-record-title">
@@ -324,7 +324,7 @@
     import { createActionRepository } from "./action-model.mjs";
     import { coverage, coverageStatement, conclusionFor, effectiveStatus, sortControls } from "./control-model.mjs";
     import { findingIndicators, Severity } from "./finding-model.mjs";
-    import { createDemoOverview, OVERVIEW_AS_OF as overviewAsOf } from "./demo-overview-model.mjs";
+    import { createDemoOverview, OVERVIEW_AS_OF as overviewAsOf, sortOverviewFindings } from "./demo-overview-model.mjs";
     const agents = {
       soc: { title: 'SOC Agent', copy: 'Correlates identity, endpoint, cloud, and network evidence, then drafts response proposals for human review.', procedure: 'Active procedure: Account takeover triage v3.2', frameworks: ['NIST SP 800-61r3', 'MITRE ATT&CK', 'CIS Control 13', 'Internal IR-01'] },
       vuln: { title: 'Vulnerability Agent', copy: 'Evaluates exposure, exploit, asset, and control evidence to prioritize human review.', procedure: 'Active procedure: Risk-based remediation v2.8', frameworks: ['CISA KEV', 'CVSS v4.0', 'NIST SP 800-40', 'CIS Control 7'] },
@@ -332,12 +332,7 @@
       compliance: { title: 'Compliance Agent', copy: 'Collects evidence, maps it to control criteria, and prepares records for human assessment.', procedure: 'Active procedure: Continuous control test v2.4', frameworks: ['NIST CSF 2.0', 'NIST SP 800-53', 'SOC 2', 'ISO 27001'] },
       engineering: { title: 'Security Engineering Agent', copy: 'Reviews detection coverage and drafts rule changes with rollback guidance for approval.', procedure: 'Awaiting approval: Sentinel rule CR-118', frameworks: ['CIS Benchmarks', 'NIST SSDF', 'Change Mgmt', 'MITRE ATT&CK'] }
     };
-    const cases = {
-      'INC-2841': { id:'INC-2841 · SOC + Identity', title:'Sign-in and download observations', verdict:'Pending review',  copy:'Sign-in, authentication-method, download, and threat-feed records collected during September 2026 UTC.', procedure:'Identity Compromise Playbook v3.2', framework:'MITRE ATT&CK T1078 · NIST SP 800-61r3', policy:'IAM-IR-004 · Human approval required', action:'Proposed identity containment', actionCopy:'Proposed session revocation, temporary sign-in restriction, and incident documentation. Human review required; no response will be performed by this app.', evidence:[['Sign-in location records','Observed sign-in records: Atlanta and Bucharest; 14-minute interval during September 2026 UTC.','Entra ID'],['Authentication-method record','Observed authenticator-registration record with an unmanaged-device attribute.','Identity'],['SharePoint download records','Observed 312 file-download entries after the second sign-in during September 2026 UTC.','M365'],['Threat-feed records','Observed source-IP entries in two threat-feed records during September 2026 UTC.','Intel']] },
-      'VUL-9912': { id:'VUL-9912 · Vulnerability', title:'Gateway observations', verdict:'Pending review',  copy:'Inventory, reachability, catalog, and dependency records collected during September 2026 UTC.', procedure:'Risk-Based Remediation Playbook v2.8', framework:'CISA KEV · NIST SP 800-40 · CVSS v4.0', policy:'VUL-SLA-001 · Rule-specific SLA', action:'Proposed emergency patch review', actionCopy:'Recommended a human-managed patch window with snapshot, service checks, rescan evidence, and a 24-hour rollback plan. This app performs none of these steps.', evidence:[['Inventory version observed','Collected package-version and advisory-range records.','Scanner'],['Service response observed','Collected gateway service-response record.','ASM'],['Catalog entry observed','Collected a CISA KEV catalog reference.','CISA'],['Dependency record collected','Observed customer-authentication dependency in CMDB record.','CMDB']] },
-      'IAM-2204': { id:'IAM-2204 · Identity', title:'Account activity observations', verdict:'Pending review',  copy:'Account activity, role, HR, and exception-search records collected during September 2026 UTC.', procedure:'Privileged Access Review v4.1', framework:'NIST SP 800-63-4 · CIS Control 6', policy:'IAM-LP-007 · Manager review required', action:'Proposed access review', actionCopy:'Recommended owner review of production access and entitlement evidence. Approval records a decision only; access remains unchanged.', evidence:[['Activity records · 2026-06-12–2026-09-13 UTC','Most recent sign-in in collected records: 2026-06-12 UTC.','Entra ID'],['Role assignment observed','Observed Production Administrator assignment in the collected record.','PAM'],['HR record collected','Observed cost-center change in the HR record.','HRIS'],['Exception search observed','Observed no entries in the collected exception-search result.','GRC']] }
-    };
-
+    const slaLabels={overdue:'Overdue',within_sla:'Within SLA',closed:'Closed'};
     const detail = document.querySelector('#agent-detail');
     function renderAgent(key){
       const a=agents[key];
@@ -348,16 +343,21 @@
     document.querySelectorAll('.agent').forEach(b=>b.addEventListener('click',()=>renderAgent(b.dataset.agent)));
 
     const dialog=document.querySelector('#case-dialog');
-    function openCase(id){
-      const c=cases[id] || cases['INC-2841'];
-      document.querySelector('#dialog-id').textContent=c.id; document.querySelector('#dialog-title').textContent=c.title;
-      document.querySelector('#verdict-title').textContent=c.verdict; document.querySelector('#verdict-copy').textContent=c.copy;
-      document.querySelector('#audit-procedure').textContent=c.procedure; document.querySelector('#audit-framework').textContent=c.framework; document.querySelector('#audit-policy').textContent=c.policy;
-      document.querySelector('#action-title').textContent=c.action; document.querySelector('#action-copy').textContent=c.actionCopy;
-      document.querySelector('#evidence-list').innerHTML=c.evidence.map((e,i)=>`<div class="evidence-item"><span aria-hidden="true">·</span><div><strong>${e[0]}</strong><span>${e[1]}</span></div><code>0${i+1} · ${e[2]}</code></div>`).join('');
+    function openFinding(id){
+      const finding=findingRepo.agent.get(id,overviewAsOf),owner=finding.owner?finding.owner.type+': '+finding.owner.id:'Unassigned';
+      document.querySelector('#dialog-id').textContent=finding.finding_id+' · '+finding.rule_id;document.querySelector('#dialog-title').textContent=finding.title;
+      document.querySelector('#verdict-title').textContent=finding.current_state==='open'?'Open finding':'Closed finding';
+      document.querySelector('#verdict-copy').textContent='Severity: '+finding.severity+' · SLA: '+slaLabels[finding.sla_status];
+      document.querySelector('#audit-rule').textContent=finding.rule_id;document.querySelector('#audit-owner').textContent=owner;
+      document.querySelector('#audit-deadline').textContent=finding.remediate_by;document.querySelector('#audit-snapshot').textContent=finding.as_of;
+      document.querySelector('#evidence-list').innerHTML=finding.evidence_ids.map(id=>{
+        const evidence=evidenceRepo.get(id);
+        return '<div class="evidence-item"><span aria-hidden="true">·</span><div><strong>'+esc(evidence.evidence_id)+'</strong><span>'+esc(evidence.source)+' · '+esc(evidence.artifact_ref.type)+'</span></div><code>'+esc(evidence.artifact_ref.verification_status)+'</code></div>';
+      }).join('');
       dialog.showModal();
     }
-    document.querySelectorAll('[data-open-case]').forEach(el=>{el.addEventListener('click',()=>openCase(el.dataset.openCase));el.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();openCase(el.dataset.openCase);}})});
+    document.querySelector('#finding-list').addEventListener('click',event=>{const row=event.target.closest('[data-finding-id]');if(row)openFinding(row.dataset.findingId);});
+    document.querySelector('#finding-list').addEventListener('keydown',event=>{const row=event.target.closest('[data-finding-id]');if(row&&(event.key==='Enter'||event.key===' ')){event.preventDefault();openFinding(row.dataset.findingId);}});
     document.querySelector('.close').addEventListener('click',()=>dialog.close());
     dialog.addEventListener('click',e=>{if(e.target===dialog)dialog.close();});
 
@@ -387,7 +387,6 @@
       ['ACT-CO-001','Compliance Agent prepared a control record','SOC 2 CC6.1 evidence is ready for human assessment.'],
       ['ACT-SE-001','Engineering Agent drafted a detection change','The Sentinel rule proposal and ATT&CK mapping are ready for approval.']
     ];
-    const caseActions={'INC-2841':'ACT-SOC-001','VUL-9912':'ACT-VUL-001','IAM-2204':'ACT-ID-002'};
     const actionStatusLabels={
       proposed:'Draft proposal',
       pending_approval:'Awaiting approval',
@@ -404,10 +403,6 @@
         const action=agentPort.get(id);
         return '<article class="activity"><div class="trail"><span class="dot mint"></span></div><div><h4>'+esc(title)+'</h4><p>'+esc(copy)+'</p><a href="#action/'+id+'">'+id+'</a> <span class="status-badge">'+esc(actionStatusLabels[action.status])+'</span></div></article>';
       }).join('');
-      document.querySelectorAll('.case-row[data-open-case]').forEach(row=>{
-        const status=agentPort.get(caseActions[row.dataset.openCase]).status;
-        row.querySelector('.state').textContent=actionStatusLabels[status];
-      });
     }
     function showAction(id){
       const record=agentPort.get(id); selectedAction=id;
@@ -419,10 +414,6 @@
       if(!actionDialog.open)actionDialog.showModal();
     }
     function navigateAction(){const match=location.hash.match(/^#action\/(ACT-[A-Z]+-\d+)$/);if(match){try{showAction(match[1]);}catch(e){notify(e.message);}}}
-    document.querySelector('#case-action-link').addEventListener('click',()=>{
-      const key=document.querySelector('#dialog-id').textContent.split(' · ')[0];
-      dialog.close(); location.hash='action/'+caseActions[key]; showAction(caseActions[key]);
-    });
     document.querySelector('#close-action').addEventListener('click',()=>actionDialog.close());
     document.querySelector('#action-feed').addEventListener('click',e=>{const a=e.target.closest('a');if(a){e.preventDefault();location.hash=a.hash;showAction(a.hash.split('/')[1]);}});
     const refresh=()=>{renderFeed();showAction(selectedAction);};
@@ -446,7 +437,7 @@
       try{humanReview.expire(selectedAction);refresh();notify('Action expired. No external action performed.');}catch(e){notify(e.message);}
     });
 
-    const {controlRepo,findingRepo,cycle}=createDemoOverview();
+    const {evidenceRepo,controlRepo,findingRepo,cycle}=createDemoOverview();
     const controlDialog=document.querySelector('#control-dialog');let selectedControl;
     const labels={not_assessed:'Not assessed',evidence_collected:'Evidence collected · pending review',tested_pass:'Tested pass',tested_fail:'Tested fail',exception_approved:'Exception approved'};
     const severityBands=Object.values(Severity).reverse();
@@ -455,10 +446,22 @@
       const controlCounts=coverage(records,cycle.cycle_id),statement=coverageStatement(controlCounts);
       const findingCounts=findingIndicators(findingRepo.agent.list(overviewAsOf),overviewAsOf);
       const hasNotAssessed=records.some(record=>effectiveStatus(record)==='not_assessed');
+      document.querySelector('#overview-as-of').textContent=overviewAsOf;
       document.querySelector('#overview-indicators').innerHTML=
-        '<article class="metric control-coverage '+(hasNotAssessed?'unknown':'')+'" data-indicator="control-coverage"><div class="metric-title">Control coverage</div><div class="metric-value metric-statement">'+esc(statement)+'</div><div class="metric-label">As of '+esc(overviewAsOf)+'</div></article>'+
-        '<article class="metric open-findings" data-indicator="open-findings"><div class="metric-title">Open findings by severity</div><div class="severity-counts">'+severityCounts(findingCounts.open_findings_by_severity)+'</div><div class="metric-label">As of '+esc(findingCounts.as_of)+'</div></article>'+
-        '<article class="metric overdue-findings" data-indicator="overdue-findings"><div class="metric-title">Overdue findings by severity</div><div class="severity-counts">'+severityCounts(findingCounts.overdue_findings_by_severity)+'</div><div class="metric-label">As of '+esc(findingCounts.as_of)+'</div></article>';
+        '<article class="metric control-coverage '+(hasNotAssessed?'unknown':'')+'" data-indicator="control-coverage"><div class="metric-title">Control coverage</div><div class="metric-value metric-statement">'+esc(statement)+'</div></article>'+
+        '<article class="metric open-findings" data-indicator="open-findings"><div class="metric-title">Open findings by severity</div><div class="severity-counts">'+severityCounts(findingCounts.open_findings_by_severity)+'</div></article>'+
+        '<article class="metric overdue-findings" data-indicator="overdue-findings"><div class="metric-title">Overdue findings by severity</div><div class="severity-counts">'+severityCounts(findingCounts.overdue_findings_by_severity)+'</div></article>';
+    }
+    const titleCase=value=>value.replace(/_/g,' ').replace(/^./,letter=>letter.toUpperCase());
+    const ownerLabel=owner=>owner?titleCase(owner.type)+': '+owner.id:'Unassigned';
+    function renderFindings(){
+      const findings=sortOverviewFindings(findingRepo.agent.list(overviewAsOf));
+      document.querySelector('#finding-list').innerHTML=findings.map(finding=>
+        '<div class="case-row" role="button" tabindex="0" data-finding-id="'+esc(finding.finding_id)+'">'+
+          '<span class="case-id">'+esc(finding.finding_id)+'</span><span class="case-title">'+esc(finding.title)+'</span>'+
+          '<span class="severity '+esc(finding.severity)+'">'+esc(finding.severity)+'</span><span class="state">'+esc(titleCase(finding.current_state))+'</span>'+
+          '<span class="state">'+esc(ownerLabel(finding.owner))+'</span><span class="state '+(finding.sla_status==='overdue'?'sla-overdue':'')+'">'+esc(slaLabels[finding.sla_status])+'</span></div>'
+      ).join('');
     }
     function renderControls(){
       const records=controlRepo.agent.list();renderOverview(records);
@@ -491,7 +494,7 @@
     document.querySelectorAll('[data-control-status]').forEach(b=>b.addEventListener('click',()=>{
       try{controlRepo.reviewer.assess(selectedControl,b.dataset.controlStatus,{assessor:document.querySelector('#control-assessor').value,assessed_at:new Date().toISOString(),assessment_rationale:document.querySelector('#control-rationale').value});renderControls();showControl(selectedControl);notify('Assessment record added to this session.');}catch(e){notify(e.message);}
     }));
-    renderControls();
+    renderControls();renderFindings();
 
     window.addEventListener('hashchange',navigateAction);
     renderFeed();navigateAction();
