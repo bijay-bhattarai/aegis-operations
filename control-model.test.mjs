@@ -122,6 +122,53 @@ test('evidence records require immutable structured artifact and collector refer
  assert.throws(()=>shared.agent.collect('C3',{...evidence,source:'Defender'}),/Conflicting evidence record/);
  assert.equal(shared.agent.get('C3').evidence.length,0);
 });
+test('global evidence IDs reject a differing collected_at',()=>{
+ const repository=createEvidenceRepository();repository.add(evidence);
+ assert.throws(()=>repository.add({...evidence,collected_at:'2026-09-14T20:00:00Z'}),/Conflicting evidence record/);
+ assert.deepEqual(repository.get(evidence.evidence_id),canonicalEvidence(evidence));
+});
+test('global evidence IDs reject a differing artifact content hash',()=>{
+ const repository=createEvidenceRepository();repository.add(evidence);
+ const conflicting={...evidence,artifact_ref:{...artifact_ref,content_hash:{algorithm:'sha256',value:'b'.repeat(64)}}};
+ assert.throws(()=>repository.add(conflicting),/Conflicting evidence record/);
+ assert.deepEqual(repository.get(evidence.evidence_id),canonicalEvidence(evidence));
+});
+test('global evidence IDs reject a differing collected_by',()=>{
+ const repository=createEvidenceRepository();repository.add(evidence);
+ const conflicting={...evidence,collected_by:{type:'person',id:'bijay',identity_basis:'self_reported'}};
+ assert.throws(()=>repository.add(conflicting),/Conflicting evidence record/);
+ assert.deepEqual(repository.get(evidence.evidence_id),canonicalEvidence(evidence));
+});
+test('an exact duplicate evidence add is idempotent and leaves the stored record unchanged',()=>{
+ const repository=createEvidenceRepository(),before=repository.add(evidence),beforeBytes=JSON.stringify(before);
+ const duplicate=repository.add(structuredClone(evidence));
+ assert.deepEqual(duplicate,before);
+ assert.equal(JSON.stringify(repository.get(evidence.evidence_id)),beforeBytes);
+ assert.equal(repository.list().length,1);
+});
+test('evidence repository exposes no removal or supersede path and returns immutable records',()=>{
+ const repository=createEvidenceRepository();repository.add(evidence);
+ assert.deepEqual(Object.keys(repository),['add','get','list','digest']);
+ for(const method of ['remove','delete','supersede'])assert.equal(repository[method],undefined);
+ const fromGet=repository.get(evidence.evidence_id),fromList=repository.list()[0];
+ for(const record of [fromGet,fromList]){
+  assert.throws(()=>{record.source='Changed';},TypeError);
+  assert.throws(()=>{record.collected_by.id='changed';},TypeError);
+  assert.throws(()=>{record.artifact_ref.locator='changed';},TypeError);
+  assert.throws(()=>{record.artifact_ref.content_hash.value='b'.repeat(64);},TypeError);
+ }
+ assert.deepEqual(repository.get(evidence.evidence_id),canonicalEvidence(evidence));
+});
+test('an assessed control still resolves its evidence after an idempotent duplicate add',()=>{
+ const evidenceRepository=createEvidenceRepository(),controls=createControlRepository({evidenceRepository});
+ controls.add(input);controls.agent.collect('C1',evidence);controls.reviewer.assess('C1','tested_pass',assessment);
+ const before=controls.agent.get('C1'),duplicate=evidenceRepository.add(structuredClone(evidence));
+ const after=controls.agent.get('C1');
+ assert.deepEqual(duplicate,canonicalEvidence(evidence));
+ assert.deepEqual(after.evidence,before.evidence);
+ assert.equal(after.assessments[0].evidence_digest,before.assessments[0].evidence_digest);
+ assert.equal(after.status,'tested_pass');
+});
 test('missing or malformed artifact references and unsupported verification are rejected atomically',()=>{
  const r=setup(),withoutArtifact={...evidence};delete withoutArtifact.artifact_ref;
  const invalid=[
