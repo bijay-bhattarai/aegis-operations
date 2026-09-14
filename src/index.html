@@ -61,7 +61,6 @@
     .scope { color: var(--muted); border: 1px solid var(--line); background: var(--panel); border-radius: 999px; padding: 8px 12px; font-size: .78rem; }
     .icon-btn { width: 36px; height: 36px; border: 1px solid var(--line); background: var(--panel); color: var(--muted); border-radius: 10px; cursor:pointer; }
     .icon-btn:hover { border-color: var(--line-strong); color: var(--text); }
-    .grid { display: grid; grid-template-columns: minmax(0, 1.65fr) minmax(300px, .75fr); gap: 18px; }
     .hero { border: 1px solid var(--line); border-radius: var(--radius); background: linear-gradient(135deg, rgba(110,242,197,.06), transparent 52%), var(--panel); padding: 22px; position: relative; overflow:hidden; box-shadow: var(--shadow); }
     .hero::after { content:""; position:absolute; width:220px; height:220px; right:-96px; top:-105px; border: 1px solid rgba(110,242,197,.18); border-radius:50%; box-shadow: 0 0 0 32px rgba(110,242,197,.018), 0 0 0 64px rgba(110,242,197,.012); }
     .hero-top { display:flex; justify-content:space-between; align-items:start; gap: 16px; position:relative; z-index:1; }
@@ -85,18 +84,12 @@
     .panel-head { display:flex; align-items:center; justify-content:space-between; padding: 17px 18px; border-bottom:1px solid var(--line); }
     .panel-head h3 { margin:0; font-size:.92rem; letter-spacing:-.01em; }
     .panel-head span { color:var(--muted); font-size:.72rem; }
-    .activity-panel { grid-column:2; grid-row:1 / span 2; overflow:hidden; }
-    .activity-list { padding: 6px 16px 2px; }
-    .activity { display:grid; grid-template-columns: 14px 1fr; gap:10px; padding:13px 0; border-bottom:1px solid rgba(33,52,49,.7); }
-    .activity:last-child { border-bottom:0; }
-    .trail { position:relative; display:flex; justify-content:center; }
-    .trail::after { content:""; position:absolute; width:1px; top:11px; bottom:-24px; background:var(--line); }
-    .activity:last-child .trail::after { display:none; }
-    .dot { width:7px; height:7px; margin-top:5px; border-radius:50%; background:var(--cyan); position:relative; z-index:1; box-shadow:0 0 0 4px var(--panel); }
-    .dot.mint{background:var(--mint)} .dot.amber{background:var(--amber)} .dot.violet{background:var(--violet)} .dot.red{background:var(--red)}
-    .activity h4 { margin:0 0 4px; font-size:.79rem; line-height:1.35; }
-    .activity p { margin:0; color:var(--muted); font-size:.7rem; line-height:1.45; }
-    .activity time { display:block; color:var(--quiet); font: .64rem ui-monospace, monospace; margin-top:6px; }
+    .view[hidden] { display:none; }
+    .view { animation:view-in .14s ease-out; }
+    @keyframes view-in { from { opacity:.35; transform:translateY(3px); } }
+    .view-context { margin:-8px 0 16px; color:var(--quiet); font:700 .68rem ui-monospace,monospace; }
+    .view > .panel:first-of-type { margin-top:0; }
+    .overview-stack { display:grid; gap:18px; }
     .agents-panel { overflow:hidden; }
     .agent-list { display:grid; grid-template-columns:repeat(5,1fr); }
     .agent { border:0; border-right:1px solid var(--line); background:transparent; color:var(--text); padding:16px 13px; text-align:left; cursor:pointer; min-width:0; }
@@ -117,6 +110,10 @@
     .frameworks { display:flex; flex-wrap:wrap; gap:6px; align-content:start; }
     .chip { border:1px solid var(--line); background:var(--panel-2); color:#b4c7c2; border-radius:6px; padding:6px 7px; font:600 .61rem ui-monospace,monospace; }
     .snapshot-time { margin:14px 0 2px; color:var(--quiet); font:700 .68rem ui-monospace,monospace; }
+    .overview-findings { overflow:hidden; }
+    .overview-finding-row { width:100%; display:grid; grid-template-columns:110px minmax(130px,.7fr) minmax(220px,1.5fr) 85px 90px; gap:12px; align-items:center; border:0; border-bottom:1px solid var(--line); padding:13px 18px; background:transparent; color:var(--text); text-align:left; cursor:pointer; }
+    .overview-finding-row:last-child { border-bottom:0; }
+    .overview-finding-row:hover { background:rgba(255,255,255,.022); }
     .cases-panel { margin-top:18px; overflow:hidden; }
     .case-row { display:grid; grid-template-columns:105px 125px minmax(190px,1.5fr) 78px 70px 138px 90px; gap:12px; align-items:center; border-bottom:1px solid var(--line); padding:13px 18px; cursor:pointer; }
     .case-row:last-child { border-bottom:0; }
@@ -129,6 +126,9 @@
     .fact-row { display:grid; grid-template-columns:minmax(120px,.45fr) minmax(180px,1fr); gap:12px; padding:8px 10px; border:1px solid var(--line); border-radius:7px; }
     .fact-row dt { color:var(--quiet); font:700 .66rem ui-monospace,monospace; }
     .fact-row dd { margin:0; color:var(--text); overflow-wrap:anywhere; }
+    .filter-bar { display:grid; grid-template-columns:repeat(4,minmax(130px,1fr)); gap:12px; padding:15px 18px; border-bottom:1px solid var(--line); }
+    .filter-bar label { color:var(--muted); font-size:.68rem; font-weight:700; }
+    .filter-bar select { display:block; width:100%; margin-top:6px; padding:8px 9px; border:1px solid var(--line-strong); border-radius:7px; background:var(--panel-2); color:var(--text); font:inherit; }
     .severity { display:inline-flex; align-items:center; gap:6px; font:700 .66rem ui-monospace,monospace; text-transform:uppercase; }
     .severity::before { content:""; width:6px; height:6px; border-radius:50%; background:currentColor; }
     .severity.critical{color:var(--red)} .severity.high{color:var(--amber)} .severity.medium{color:var(--cyan)}
@@ -152,11 +152,6 @@
     .detail-section { border:1px solid var(--line); border-radius:10px; padding:12px; margin:12px 0; }
     .detail-section h3 { margin:0 0 6px; font-size:.78rem; }
     .detail-section p { margin:0; color:var(--muted); font-size:.72rem; line-height:1.5; }
-    .governance { margin-top:18px; display:grid; grid-template-columns:minmax(0,1fr) auto; align-items:center; gap:18px; padding:17px 18px; }
-    .gov-title { display:flex; gap:11px; align-items:flex-start; }
-    .gov-shield { width:31px;height:31px;display:grid;place-items:center;border:1px solid rgba(110,242,197,.25);border-radius:9px;color:var(--mint);background:rgba(110,242,197,.05); }
-    .gov-title h3 { margin:0 0 4px; font-size:.85rem; }
-    .gov-title p { margin:0; color:var(--muted); font-size:.72rem; line-height:1.4; }
     .modes { display:flex; gap:5px; background:#07100f; border:1px solid var(--line); border-radius:10px; padding:4px; }
     .modes button { border:0; background:transparent; color:var(--muted); border-radius:7px; padding:8px 10px; cursor:pointer; font-size:.68rem; font-weight:750; }
     .modes button.active { background:var(--mint-dim); color:var(--mint); }
@@ -193,29 +188,25 @@
       .app { grid-template-columns:76px minmax(0,1fr); }
       .brand-copy,.nav button span:not(.nav-icon):not(.nav-count),.nav-label,.system-card p,.system-row span:last-child { display:none; }
       .sidebar{padding-inline:12px}.brand{justify-content:center;padding-inline:0}.nav button{justify-content:center;padding:11px}.system-card{display:grid;place-items:center;padding:12px 8px}
-      .grid{grid-template-columns:1fr}.activity-panel{grid-column:1;grid-row:auto}.agent-list{grid-template-columns:repeat(5,minmax(115px,1fr));overflow-x:auto}.activity-list{display:grid;grid-template-columns:repeat(2,1fr);gap:0 14px}.activity:nth-child(5){display:none}
+      .agent-list{grid-template-columns:repeat(5,minmax(115px,1fr));overflow-x:auto}
     }
     @media (max-width: 720px) {
       .app{display:block}.sidebar{position:fixed;height:auto;left:10px;right:10px;bottom:10px;top:auto;border:1px solid var(--line);border-radius:14px;padding:6px;background:rgba(7,16,15,.96)}
-      .brand,.nav-label,.side-bottom{display:none}.nav{grid-template-columns:repeat(7,1fr);gap:2px}.nav button{padding:9px 4px}.nav button span:not(.nav-icon):not(.nav-count){display:none}.nav-icon{border:0;font-size:.65rem}.nav-count{margin-left:0;padding:1px 4px}
+      .brand,.nav-label,.side-bottom{display:none}.nav{grid-template-columns:repeat(4,1fr);gap:2px}.nav button{padding:9px 4px}.nav button span:not(.nav-icon):not(.nav-count){display:none}.nav-icon{border:0;font-size:.65rem}.nav-count{margin-left:0;padding:1px 4px}
       main{padding:0 14px 90px}.topbar{height:66px;margin-bottom:14px}.scope{display:none}.hero{padding:17px}.hero-top{display:block}.trust{display:inline-block;margin-top:14px}.metric-row{grid-template-columns:repeat(2,1fr);gap:14px}.metric-value{font-size:1.2rem}
-      .activity-list{display:block}.activity:nth-child(5){display:grid}.agent-detail{grid-template-columns:1fr}.frameworks{margin-top:4px}.case-row{grid-template-columns:100px 1fr 76px;padding:12px 14px}.case-row>*:nth-child(4),.case-row>*:nth-child(5),.case-row>*:nth-child(6){display:none}.case-header{display:none}.approval-meta{grid-template-columns:repeat(2,minmax(0,1fr))}.governance{grid-template-columns:1fr}.modes{overflow:auto}.modes button{flex:1}.activity-panel{display:none}.topbar h1{font-size:1rem}.eyebrow{font-size:.62rem}.agent-list{grid-template-columns:repeat(5,130px)}
+      .agent-detail{grid-template-columns:1fr}.frameworks{margin-top:4px}.case-row{grid-template-columns:85px 115px minmax(150px,1fr) 76px;padding:12px 14px}.case-row>*:nth-child(5),.case-row>*:nth-child(6),.case-row>*:nth-child(7){display:none}.case-header{display:none}.overview-finding-row{grid-template-columns:85px 115px minmax(150px,1fr) 76px}.overview-finding-row>*:nth-child(5){display:none}.approval-meta{grid-template-columns:repeat(2,minmax(0,1fr))}.filter-bar{grid-template-columns:repeat(2,1fr)}.topbar h1{font-size:1rem}.eyebrow{font-size:.62rem}.agent-list{grid-template-columns:repeat(5,130px)}
       .audit-grid{grid-template-columns:1fr}.action-buttons{flex-direction:column}.btn{width:100%}.toast{left:14px;right:14px;bottom:80px;text-align:center}
     }
     @media (prefers-reduced-motion:reduce){*{scroll-behavior:auto!important;transition:none!important}.btn:hover{transform:none}}
 
     .status-badge {display:inline-block;border:1px solid var(--line-strong);border-radius:6px;padding:4px 7px;color:var(--amber);font-size:.875rem; margin-top:8px}
-    .activity a{color:var(--mint);font-size:.875rem}
     #action-record{white-space:pre-wrap;overflow-wrap:anywhere;font-size:.875rem}
     #action-dialog label{display:block;margin:12px 0;font-size:1rem}
     #action-dialog input:not([type=checkbox]),#action-dialog textarea{display:block;width:100%;padding:10px;background:var(--panel);color:var(--text);border:1px solid var(--line-strong);border-radius:7px;font:inherit}
     button:disabled{opacity:.45;cursor:not-allowed}
     .state{overflow-wrap:anywhere}
-    @media(max-width:1060px){.activity:nth-child(5){display:grid}}
-    @media(max-width:720px){.activity-panel{display:block}}
 
-    #control-panel{margin-top:20px}
-    #control-list button{display:block;width:100%;background:transparent;color:var(--text);border:0;border-bottom:1px solid var(--line);padding:14px;text-align:left;font-size:1rem}
+    #control-list button{display:grid;grid-template-columns:minmax(180px,1.3fr) 180px 150px 190px 90px;gap:14px;align-items:center;width:100%;background:transparent;color:var(--text);border:0;border-bottom:1px solid var(--line);padding:14px;text-align:left;font-size:.82rem}
     #control-list button[data-status=not_assessed]{background:#f2bb68;color:#171008;font-weight:850;border:3px solid #ffe2b2;box-shadow:0 0 0 3px rgba(242,187,104,.16)}
     #control-list button[data-status=tested_fail]{border-left:3px solid var(--red)}
     .metric.open-findings{border-width:1px}
@@ -227,7 +218,8 @@
     #control-dialog label{display:block;margin-top:12px}
     #control-dialog input,#control-dialog textarea,#control-dialog select{display:block;width:100%;padding:10px;background:var(--panel);color:var(--text);border:1px solid var(--line);font:inherit}
     #control-record{white-space:pre-wrap;overflow-wrap:anywhere}
-    #control-list small{display:block;margin-top:6px;font-size:.875rem}
+    #control-list small{display:block;margin-top:4px;font-size:.72rem;color:var(--muted)}
+    .control-header{display:grid;grid-template-columns:minmax(180px,1.3fr) 180px 150px 190px 90px;gap:14px;padding:10px 14px;color:var(--quiet);font:700 .62rem ui-monospace,monospace;text-transform:uppercase;letter-spacing:.06em;border-bottom:1px solid var(--line)}
     .agent-task{height:auto}.icon-btn{flex-shrink:0}
     .hero h2{font-size:1.5rem}
     @media(max-width:720px){.metric-row{grid-template-columns:1fr}.metric.unknown{grid-column:auto}.severity-counts{grid-template-columns:repeat(2,1fr)}}
@@ -242,13 +234,10 @@
       </div>
       <div class="nav-label">Workspace</div>
       <nav class="nav">
-        <button class="active"><span class="nav-icon">OV</span><span>Overview</span></button>
-        <button data-scroll="approvals"><span class="nav-icon">AP</span><span>Approvals</span><span class="nav-count" id="approval-count">0</span></button>
-        <button data-scroll="agents"><span class="nav-icon">AI</span><span>AI workforce</span></button>
-        <button data-scroll="cases"><span class="nav-icon">IN</span><span>Findings</span></button>
-        <button data-scroll="cases"><span class="nav-icon">VU</span><span>Exposure</span></button>
-        <button data-scroll="governance"><span class="nav-icon">ID</span><span>Identity</span></button>
-        <button data-scroll="governance"><span class="nav-icon">GV</span><span>Governance</span></button>
+        <button data-route="overview"><span class="nav-icon">OV</span><span>Overview</span></button>
+        <button data-route="approvals"><span class="nav-icon">AP</span><span>Approvals</span><span class="nav-count" id="approval-count">0</span></button>
+        <button data-route="findings"><span class="nav-icon">FI</span><span>Findings</span></button>
+        <button data-route="controls"><span class="nav-icon">CO</span><span>Controls</span></button>
       </nav>
       <div class="side-bottom">
         <div class="system-card"><div class="system-row"><span class="pulse"></span><span>Proposal-only model</span></div><p>Agents collect evidence and propose actions for review.</p></div>
@@ -257,23 +246,19 @@
 
     <main>
       <header class="topbar">
-        <div><div class="eyebrow">Security command center</div><h1>Operations overview</h1></div>
+        <div><div class="eyebrow">Security command center</div><h1 id="view-title">Operations overview</h1></div>
         <div class="top-actions"><span class="scope">Acme Cloud · Session-only demo</span><button class="icon-btn" aria-label="View observation window">i</button></div>
       </header>
 
-      <div class="grid">
-        <section class="hero" aria-labelledby="overview-title">
+      <section class="view overview-stack" data-view="overview" aria-labelledby="overview-title">
+        <section class="hero">
           <div class="hero-top">
             <div><div class="eyebrow">Today’s review</div><h2 id="overview-title">Welcome back, Bijay.</h2><p>Review control coverage, open findings, and overdue work at the shared snapshot below.</p></div>
             <div class="trust">Session-only demo</div>
           </div>
-          <div class="snapshot-time">Snapshot as of <time id="overview-as-of"></time></div>
-<div class="metric-row" id="overview-indicators"></div><section class="panel" id="control-panel"><div class="panel-head"><h3>Control records</h3><span>Needs assessment first</span></div><div id="control-list"></div></section>
+          <div class="snapshot-time">Snapshot as of <time id="overview-as-of" data-as-of></time></div>
+          <div class="metric-row" id="overview-indicators"></div>
         </section>
-
-        <aside class="panel activity-panel" aria-labelledby="activity-title">
-          <div class="panel-head"><h3 id="activity-title">Agent proposals</h3><span>Awaiting human decisions</span></div>
-          <div class="activity-list" id="action-feed"></div></aside>
 
         <section class="panel agents-panel" id="agents" aria-labelledby="agents-title">
           <div class="panel-head"><h3 id="agents-title">AI security workforce</h3><span>Five supervised roles</span></div>
@@ -286,22 +271,42 @@
           </div>
           <div class="agent-detail" id="agent-detail" role="tabpanel"></div>
         </section>
-      </div>
-
-      <section class="panel approvals-panel" id="approvals" aria-labelledby="approvals-title">
-        <div class="panel-head"><h3 id="approvals-title">Approval queue</h3><span id="approval-summary">Actions awaiting approval</span></div>
-        <div class="approval-list" id="approval-list"></div>
+        <section class="panel overview-findings" aria-labelledby="priority-findings-title">
+          <div class="panel-head"><h3 id="priority-findings-title">Highest-priority open findings</h3><span>First four at the shared snapshot</span></div>
+          <div id="overview-finding-list"></div>
+        </section>
       </section>
 
-      <section class="panel cases-panel" id="cases" aria-labelledby="cases-title">
-        <div class="panel-head"><h3 id="cases-title">Finding records</h3><span id="finding-provenance"></span></div>
-        <div class="case-row case-header"><span>Finding</span><span>Subject</span><span>Title</span><span>Severity</span><span>State</span><span>Owner</span><span>SLA status</span></div>
-        <div id="finding-list"></div>
+      <section class="view" data-view="approvals" hidden aria-labelledby="approvals-title">
+        <div class="view-context">Snapshot as of <time data-as-of></time></div>
+        <section class="panel approvals-panel">
+          <div class="panel-head"><h3 id="approvals-title">Approval queue</h3><span id="approval-summary">Actions awaiting approval</span></div>
+          <div class="approval-list" id="approval-list"></div>
+        </section>
       </section>
 
-      <section class="panel governance" id="governance" aria-labelledby="gov-heading">
-        <div class="gov-title"><div class="gov-shield" aria-hidden="true">i</div><div><h3 id="gov-heading">Action recording constraints</h3><p>Agents have no execution capability. Human decisions and external execution attestations are records only.</p></div></div>
-        <span class="chip">Pending review · execution unavailable</span>
+      <section class="view" data-view="findings" hidden aria-labelledby="cases-title">
+        <div class="view-context">Snapshot as of <time data-as-of></time></div>
+        <section class="panel cases-panel">
+          <div class="panel-head"><h3 id="cases-title">Finding records</h3><span id="finding-provenance"></span></div>
+          <div class="filter-bar" aria-label="Finding filters">
+            <label>Severity<select id="filter-severity"><option value="all">All severities</option><option value="critical">Critical</option><option value="high">High</option><option value="medium">Medium</option><option value="low">Low</option></select></label>
+            <label>State<select id="filter-state"><option value="all">All states</option><option value="open">Open</option><option value="closed">Closed</option></select></label>
+            <label>SLA status<select id="filter-sla"><option value="all">All SLA states</option><option value="overdue">Overdue</option><option value="within_sla">Within SLA</option><option value="closed">Closed</option></select></label>
+            <label>Finding type<select id="filter-type"><option value="all">All finding types</option><option value="identity">Identity</option><option value="vulnerability">Vulnerability</option></select></label>
+          </div>
+          <div class="case-row case-header"><span>Finding</span><span>Subject</span><span>Title</span><span>Severity</span><span>State</span><span>Owner</span><span>SLA status</span></div>
+          <div id="finding-list"></div>
+        </section>
+      </section>
+
+      <section class="view" data-view="controls" hidden aria-labelledby="controls-title">
+        <div class="view-context">Snapshot as of <time data-as-of></time> · Control cycle <span id="control-cycle"></span></div>
+        <section class="panel">
+          <div class="panel-head"><h3 id="controls-title">Control records</h3><span>Assessment state and attribution</span></div>
+          <div class="control-header"><span>Control</span><span>Assessment state</span><span>Assessor</span><span>Assessed at</span><span>Cycle</span></div>
+          <div id="control-list"></div>
+        </section>
       </section>
     </main>
   </div>
@@ -365,6 +370,7 @@
     import { coverage, coverageStatement, conclusionFor, effectiveStatus, sortControls } from "./control-model.mjs";
     import { findingIndicators, Severity } from "./finding-model.mjs";
     import { createDemoOverview, OVERVIEW_AS_OF as overviewAsOf, sortOverviewFindings } from "./demo-overview-model.mjs";
+    import { resolveAppRoute } from "./route-model.mjs";
     const agents = {
       soc: { title: 'SOC Agent', copy: 'Correlates identity, endpoint, cloud, and network evidence, then drafts response proposals for human review.', procedure: 'Active procedure: Account takeover triage v3.2', frameworks: ['NIST SP 800-61r3', 'MITRE ATT&CK', 'CIS Control 13', 'Internal IR-01'] },
       vuln: { title: 'Vulnerability Agent', copy: 'Evaluates exposure, exploit, asset, and control evidence to prioritize human review.', procedure: 'Active procedure: Risk-based remediation v2.8', frameworks: ['CISA KEV', 'CVSS v4.0', 'NIST SP 800-40', 'CIS Control 7'] },
@@ -400,15 +406,17 @@
       }).join('');
       dialog.showModal();
     }
-    document.querySelector('#finding-list').addEventListener('click',event=>{const row=event.target.closest('[data-finding-id]');if(row)openFinding(row.dataset.findingId);});
-    document.querySelector('#finding-list').addEventListener('keydown',event=>{const row=event.target.closest('[data-finding-id]');if(row&&(event.key==='Enter'||event.key===' ')){event.preventDefault();openFinding(row.dataset.findingId);}});
-    document.querySelector('.close').addEventListener('click',()=>dialog.close());
-    dialog.addEventListener('click',e=>{if(e.target===dialog)dialog.close();});
+    let currentRoute='overview';
+    const openFindingRoute=id=>{location.hash=currentRoute+'/finding/'+id;};
+    document.addEventListener('click',event=>{const row=event.target.closest('[data-finding-id]');if(row)openFindingRoute(row.dataset.findingId);});
+    document.addEventListener('keydown',event=>{const row=event.target.closest('[data-finding-id]');if(row&&(event.key==='Enter'||event.key===' ')){event.preventDefault();openFindingRoute(row.dataset.findingId);}});
+    document.querySelector('.close').addEventListener('click',()=>{location.hash=currentRoute;});
+    dialog.addEventListener('click',e=>{if(e.target===dialog)location.hash=currentRoute;});
 
     const toast=document.querySelector('.toast');
     function notify(message){toast.textContent=message;toast.classList.add('show');clearTimeout(window.toastTimer);window.toastTimer=setTimeout(()=>toast.classList.remove('show'),2600);}
-    document.querySelectorAll('[data-scroll]').forEach(b=>b.addEventListener('click',()=>document.querySelector('#'+b.dataset.scroll).scrollIntoView({behavior:'smooth',block:'center'})));
-    document.querySelector('.icon-btn').addEventListener('click',()=>notify('Case observations · September 2026 UTC.'));
+    document.querySelectorAll('[data-route]').forEach(button=>button.addEventListener('click',()=>{location.hash=button.dataset.route;}));
+    document.querySelector('.icon-btn').addEventListener('click',()=>notify('Shared snapshot: '+overviewAsOf+'.'));
 
 
     const {agent:agentPort, review:humanReview}=createActionRepository();
@@ -421,11 +429,6 @@
       agentPort.propose({action_id,agent_id,action_type,target,justification,rule_id,control_refs,severity,rollback_procedure,proposed_at:'2026-09-13T20:00:00Z'});
       agentPort.submit(action_id);
     }
-    const feed=[
-      ['ACT-ID-001','Identity Agent prepared a session proposal','The disabled-account entitlement finding is ready for human review.'],
-      ['ACT-ID-002','Identity Agent prepared an entitlement proposal','The cross-department privileged-role finding is ready for human review.'],
-      ['ACT-CO-001','Compliance Agent prepared a control record','SOC 2 CC6.1 evidence is ready for human assessment.']
-    ];
     const actionStatusLabels={
       proposed:'Draft proposal',
       pending_approval:'Awaiting approval',
@@ -442,12 +445,6 @@
       const ids=[...new Set(linkedFindingsFor(actionId).flatMap(finding=>finding.evidence_ids))];
       return ids.map(id=>evidenceRepo.get(id));
     };
-    function renderFeed(){
-      document.querySelector('#action-feed').innerHTML=feed.map(([id,title,copy])=>{
-        const action=agentPort.get(id);
-        return '<article class="activity"><div class="trail"><span class="dot mint"></span></div><div><h4>'+esc(title)+'</h4><p>'+esc(copy)+'</p><a href="#action/'+id+'">'+id+'</a> <span class="status-badge">'+esc(actionStatusLabels[action.status])+'</span></div></article>';
-      }).join('');
-    }
     function renderApprovalQueue(){
       const items=approvalQueue(agentPort.list(),findingRepo.agent.list(overviewAsOf));
       document.querySelector('#approval-count').textContent=String(items.length);
@@ -476,11 +473,9 @@
       document.querySelector('#decision-prerequisite').textContent=record.status==='proposed'?'Review is unavailable until the proposing agent submits the action.':'';
       if(!actionDialog.open)actionDialog.showModal();
     }
-    function navigateAction(){const match=location.hash.match(/^#action\/(ACT-[A-Z]+-\d+)$/);if(match){try{showAction(match[1]);}catch(e){notify(e.message);}}}
-    document.querySelector('#close-action').addEventListener('click',()=>actionDialog.close());
-    document.querySelector('#action-feed').addEventListener('click',e=>{const a=e.target.closest('a');if(a){e.preventDefault();location.hash=a.hash;showAction(a.hash.split('/')[1]);}});
-    document.querySelector('#approval-list').addEventListener('click',event=>{const row=event.target.closest('[data-approval-id]');if(row){location.hash='action/'+row.dataset.approvalId;showAction(row.dataset.approvalId);}});
-    const refresh=()=>{renderFeed();renderApprovalQueue();showAction(selectedAction);};
+    document.querySelector('#close-action').addEventListener('click',()=>{location.hash=currentRoute;});
+    document.querySelector('#approval-list').addEventListener('click',event=>{const row=event.target.closest('[data-approval-id]');if(row)location.hash=currentRoute+'/action/'+row.dataset.approvalId;});
+    const refresh=()=>{renderApprovalQueue();if(selectedAction)showAction(selectedAction);};
     document.querySelectorAll('[data-decision]').forEach(button=>button.addEventListener('click',()=>{
       try{
         humanReview.decide(selectedAction,button.dataset.decision,{
@@ -510,7 +505,6 @@
       const controlCounts=coverage(records,cycle.cycle_id),statement=coverageStatement(controlCounts);
       const findingCounts=findingIndicators(findingRepo.agent.list(overviewAsOf),overviewAsOf);
       const hasNotAssessed=records.some(record=>effectiveStatus(record)==='not_assessed');
-      document.querySelector('#overview-as-of').textContent=overviewAsOf;
       document.querySelector('#overview-indicators').innerHTML=
         '<article class="metric control-coverage '+(hasNotAssessed?'unknown':'')+'" data-indicator="control-coverage"><div class="metric-title">Control coverage</div><div class="metric-value metric-statement">'+esc(statement)+'</div></article>'+
         '<article class="metric open-findings" data-indicator="open-findings"><div class="metric-title">Open findings by severity</div><div class="severity-counts">'+severityCounts(findingCounts.open_findings_by_severity)+'</div></article>'+
@@ -520,21 +514,26 @@
     const ownerLabel=owner=>owner?titleCase(owner.type)+': '+owner.id:'Unassigned';
     function renderFindings(){
       const findings=sortOverviewFindings(findingRepo.agent.list(overviewAsOf));
+      const filters={severity:document.querySelector('#filter-severity').value,state:document.querySelector('#filter-state').value,sla:document.querySelector('#filter-sla').value,type:document.querySelector('#filter-type').value};
+      const filtered=findings.filter(finding=>(filters.severity==='all'||finding.severity===filters.severity)&&(filters.state==='all'||finding.current_state===filters.state)&&(filters.sla==='all'||finding.sla_status===filters.sla)&&(filters.type==='all'||finding.finding_type===filters.type));
       const hash=snapshot.artifact_ref.content_hash.value;
       document.querySelector('#finding-provenance').textContent='Entra export '+snapshot.collected_at+' · SHA-256 '+hash.slice(0,12)+'…'+hash.slice(-8);
-      document.querySelector('#finding-list').innerHTML=findings.map(finding=>
+      document.querySelector('#finding-list').innerHTML=filtered.length?filtered.map(finding=>
         '<div class="case-row" role="button" tabindex="0" data-finding-id="'+esc(finding.finding_id)+'">'+
           '<span class="case-id">'+esc(finding.finding_id)+'</span><span class="case-subject">'+esc(finding.subject.label)+'</span><span class="case-title">'+esc(finding.title)+'</span>'+
           '<span class="severity '+esc(finding.severity)+'">'+esc(finding.severity)+'</span><span class="state">'+esc(titleCase(finding.current_state))+'</span>'+
           '<span class="state">'+esc(ownerLabel(finding.owner))+'</span><span class="state '+(finding.sla_status==='overdue'?'sla-overdue':'')+'">'+esc(slaLabels[finding.sla_status])+'</span></div>'
+      ).join(''):'<p class="empty-queue">No findings match these filters.</p>';
+      document.querySelector('#overview-finding-list').innerHTML=findings.filter(finding=>finding.current_state==='open').slice(0,4).map(finding=>
+        '<button class="overview-finding-row" data-finding-id="'+esc(finding.finding_id)+'"><span class="case-id">'+esc(finding.finding_id)+'</span><span class="case-subject">'+esc(finding.subject.label)+'</span><span class="case-title">'+esc(finding.title)+'</span><span class="severity '+esc(finding.severity)+'">'+esc(finding.severity)+'</span><span class="state '+(finding.sla_status==='overdue'?'sla-overdue':'')+'">'+esc(slaLabels[finding.sla_status])+'</span></button>'
       ).join('');
     }
     function renderControls(){
       const records=controlRepo.agent.list();renderOverview(records);
+      document.querySelector('#control-cycle').textContent=cycle.cycle_id;
       document.querySelector('#control-list').innerHTML=sortControls(records).map(record=>{
         const conclusion=conclusionFor(record);
-        const attribution=conclusion?' · '+esc(conclusion.assessor)+' · '+esc(conclusion.assessed_at):'';
-        return '<button data-control-id="'+record.control_id+'" data-status="'+effectiveStatus(record)+'">'+esc(record.name)+'<small>'+labels[effectiveStatus(record)]+attribution+'</small></button>';
+        return '<button data-control-id="'+record.control_id+'" data-status="'+effectiveStatus(record)+'"><span><strong>'+esc(record.control_id)+'</strong><small>'+esc(record.name)+'</small></span><span>'+esc(labels[effectiveStatus(record)])+'</span><span>'+esc(conclusion?.assessor??'Not recorded')+'</span><span>'+esc(conclusion?.assessed_at??'—')+'</span><span>'+esc(record.cycle_id)+'</span></button>';
       }).join('');
     }
     function showControl(id){
@@ -544,8 +543,8 @@
       document.querySelectorAll('[data-control-status]').forEach(b=>b.disabled=record.status!=='evidence_collected');
       if(!controlDialog.open)controlDialog.showModal();
     }
-    document.querySelector('#control-list').addEventListener('click',e=>{const b=e.target.closest('[data-control-id]');if(b)showControl(b.dataset.controlId);});
-    document.querySelector('#close-control').addEventListener('click',()=>controlDialog.close());
+    document.querySelector('#control-list').addEventListener('click',e=>{const b=e.target.closest('[data-control-id]');if(b)location.hash=currentRoute+'/control/'+b.dataset.controlId;});
+    document.querySelector('#close-control').addEventListener('click',()=>{location.hash=currentRoute;});
     document.querySelector('#collect-control').addEventListener('click',()=>{
       try{
         const collectorType=document.querySelector('#collector-type').value;
@@ -560,10 +559,29 @@
     document.querySelectorAll('[data-control-status]').forEach(b=>b.addEventListener('click',()=>{
       try{controlRepo.reviewer.assess(selectedControl,b.dataset.controlStatus,{assessor:document.querySelector('#control-assessor').value,assessed_at:new Date().toISOString(),assessment_rationale:document.querySelector('#control-rationale').value});renderControls();showControl(selectedControl);notify('Assessment record added to this session.');}catch(e){notify(e.message);}
     }));
-    renderControls();renderFindings();
-
-    window.addEventListener('hashchange',navigateAction);
-    renderFeed();renderApprovalQueue();navigateAction();
+    const routeTitles={overview:'Operations overview',approvals:'Approvals',findings:'Findings',controls:'Controls'};
+    function navigateRoute(){
+      const route=resolveAppRoute(location.hash,{
+        action:agentPort.list().map(record=>record.action_id),
+        finding:findingRepo.agent.list(overviewAsOf).map(record=>record.finding_id),
+        control:controlRepo.agent.list().map(record=>record.control_id)
+      });
+      if(route.redirect){location.hash=route.parent;if(route.notice)notify(route.notice);return;}
+      currentRoute=route.parent;
+      document.querySelectorAll('[data-view]').forEach(view=>{view.hidden=view.dataset.view!==currentRoute;});
+      document.querySelectorAll('[data-route]').forEach(button=>{const active=button.dataset.route===currentRoute;button.classList.toggle('active',active);if(active)button.setAttribute('aria-current','page');else button.removeAttribute('aria-current');});
+      document.querySelector('#view-title').textContent=routeTitles[currentRoute];
+      for(const openDialog of [dialog,actionDialog,controlDialog])if(openDialog.open)openDialog.close();
+      if(route.recordType==='action')showAction(route.id);
+      else if(route.recordType==='finding')openFinding(route.id);
+      else if(route.recordType==='control')showControl(route.id);
+      window.scrollTo(0,0);
+    }
+    document.querySelectorAll('[data-as-of]').forEach(node=>{node.textContent=overviewAsOf;});
+    for(const routedDialog of [dialog,actionDialog,controlDialog])routedDialog.addEventListener('cancel',event=>{event.preventDefault();location.hash=currentRoute;});
+    for(const filter of document.querySelectorAll('.filter-bar select'))filter.addEventListener('change',renderFindings);
+    renderControls();renderFindings();renderApprovalQueue();
+    window.addEventListener('hashchange',navigateRoute);navigateRoute();
     // Only inspection is exposed to agents. No decision, autonomy, or execution tools.
     if(document.modelContext?.registerTool){
       const lifecycle=new AbortController();

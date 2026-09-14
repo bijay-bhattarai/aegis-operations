@@ -10,6 +10,7 @@ import {createEvidenceRepository} from './src/evidence-model.mjs';
 import {createControlRepository,coverage,coverageStatement} from './src/control-model.mjs';
 import {createDemoOverview,OVERVIEW_AS_OF,sortOverviewFindings} from './src/demo-overview-model.mjs';
 import {ENTRA_FINDING_SEEDS,ENTRA_QUEUE_RULES,ENTRA_SNAPSHOT} from './src/entra-finding-seeds.mjs';
+import {resolveAppRoute} from './src/route-model.mjs';
 
 const artifact=value=>({type:'log_query',locator:'artifact://session/finding/'+value,content_hash:{algorithm:'sha256',value:value.repeat(64)}});
 const evidence=id=>({evidence_id:id,source:'Defender',collected_by:{type:'agent',id:'vuln'},collected_at:'2026-09-01T00:00:00Z',artifact_ref:artifact(id==='E1'?'a':'b')});
@@ -272,11 +273,51 @@ test('dashboard indicators share one explicit as_of and are computed from reposi
  assert.match(html,/const findingCounts=findingIndicators\(findingRepo\.agent\.list\(overviewAsOf\),overviewAsOf\)/);
  assert.match(html,/const controlCounts=coverage\(records,cycle\.cycle_id\),statement=coverageStatement\(controlCounts\)/);
  for(const indicator of ['control-coverage','open-findings','overdue-findings'])assert.match(html,new RegExp('data-indicator="'+indicator+'"'));
- assert.equal((html.match(/Snapshot as of/g)||[]).length,1);
- assert.match(html,/<time id="overview-as-of"><\/time>/);
- assert.match(html,/#overview-as-of'\)\.textContent=overviewAsOf/);
+ assert.match(html,/<time id="overview-as-of" data-as-of><\/time>/);
+ assert.match(html,/querySelectorAll\('\[data-as-of\]'\)\.forEach\(node=>\{node\.textContent=overviewAsOf;\}\)/);
  assert.doesNotMatch(html,/<div class="metric-label">As of /);
  assert.doesNotMatch(html,/id="coverage-metrics"/);
+});
+
+test('sidebar exposes exactly four hash-routed views and removes dead navigation',()=>{
+ const html=fs.readFileSync('src/index.html','utf8'),nav=html.slice(html.indexOf('<nav class="nav">'),html.indexOf('</nav>'));
+ assert.equal((nav.match(/<button data-route=/g)||[]).length,4);
+ for(const route of ['overview','approvals','findings','controls']){
+   assert.match(nav,new RegExp('data-route="'+route+'"'));assert.match(html,new RegExp('data-view="'+route+'"'));
+ }
+ assert.doesNotMatch(nav,/AI workforce|Incidents|Exposure|Identity|Governance|data-scroll/);
+ assert.match(html,/import \{ resolveAppRoute \} from "\.\/route-model\.mjs"/);
+ assert.match(fs.readFileSync('src/route-model.mjs','utf8'),/\^#\(overview\|approvals\|findings\|controls\)/);
+ assert.match(html,/window\.addEventListener\('hashchange',navigateRoute\);navigateRoute\(\)/);
+});
+
+test('overview uses a compact priority list while Findings owns the complete filtered table',()=>{
+ const html=fs.readFileSync('src/index.html','utf8');
+ assert.match(html,/data-view="overview"[\s\S]*id="overview-indicators"[\s\S]*id="agents"[\s\S]*id="overview-finding-list"/);
+ assert.match(html,/findings\.filter\(finding=>finding\.current_state==='open'\)\.slice\(0,4\)/);
+ assert.match(html,/data-view="findings"[\s\S]*id="filter-severity"[\s\S]*id="filter-state"[\s\S]*id="filter-sla"[\s\S]*id="filter-type"[\s\S]*id="finding-list"/);
+ for(const expression of ['finding.severity===filters.severity','finding.current_state===filters.state','finding.sla_status===filters.sla','finding.finding_type===filters.type'])assert.match(html,new RegExp(expression.replaceAll('.','\\.')));
+ assert.doesNotMatch(html,/id="action-feed"|id="control-panel"/);
+});
+
+test('drawer routes retain their parent view and use the shared snapshot',()=>{
+ const html=fs.readFileSync('src/index.html','utf8');
+ assert.match(html,/currentRoute\+'\/finding\/'\+id/);assert.match(html,/currentRoute\+'\/action\/'\+row\.dataset\.approvalId/);assert.match(html,/currentRoute\+'\/control\/'\+b\.dataset\.controlId/);
+ assert.match(html,/if\(route\.recordType==='action'\)showAction\(route\.id\)[\s\S]*route\.recordType==='finding'[\s\S]*route\.recordType==='control'/);
+ assert.match(html,/findingRepo\.agent\.list\(overviewAsOf\)/);assert.match(html,/findingRepo\.agent\.get\(id,overviewAsOf\)/);
+});
+
+test('unknown drawer ids return to their parent route with a visible notice',()=>{
+ const recordIds={action:['ACT-ID-001'],finding:['IAM-0001'],control:['CTRL-01']};
+ assert.deepEqual(resolveAppRoute('#findings/finding/DOES-NOT-EXIST',recordIds),{parent:'findings',redirect:true,notice:'Finding record was not found.'});
+ assert.deepEqual(resolveAppRoute('#approvals/action/NOPE-123',recordIds),{parent:'approvals',redirect:true,notice:'Action record was not found.'});
+ assert.deepEqual(resolveAppRoute('#controls/control/NOPE-456',recordIds),{parent:'controls',redirect:true,notice:'Control record was not found.'});
+});
+
+test('a drawer route with a trailing empty id returns to its parent with a notice',()=>{
+ assert.deepEqual(resolveAppRoute('#findings/finding/',{finding:['IAM-0001']}),{parent:'findings',redirect:true,notice:'Finding record was not found.'});
+ const html=fs.readFileSync('src/index.html','utf8');
+ assert.match(html,/if\(route\.redirect\)\{location\.hash=route\.parent;if\(route\.notice\)notify\(route\.notice\);return;\}/);
 });
 
 test('finding table projects repository records and sorts overdue before severity',()=>{

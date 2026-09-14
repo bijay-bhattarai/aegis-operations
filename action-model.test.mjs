@@ -85,11 +85,12 @@ test('UI syntax and no outbound writer APIs or agent decision tools',()=>{
  assert.doesNotMatch(h+m,/\b(fetch|XMLHttpRequest|WebSocket|EventSource|sendBeacon)\s*\(/);
  assert.doesNotMatch(h,/set_default_autonomy|decide_security_case|data-mode|data-action=/);
  assert.match(h,/connect-src 'none'/);assert.match(h,/form-action 'none'/);
- assert.match(h,/action\.status/);assert.match(h,/href="#action\//);
+ assert.match(h,/action\.status/);assert.match(h,/currentRoute\+'\/action\/'\+row\.dataset\.approvalId/);
 });
 test('approval queue UI exposes review metadata and keeps execution separate',()=>{
  const h=fs.readFileSync('src/index.html','utf8');
- assert.match(h,/<span>Overview<\/span><\/button>\s*<button data-scroll="approvals">[\s\S]*?<span>Approvals<\/span><span class="nav-count" id="approval-count">0<\/span>/);
+ assert.match(h,/<button data-route="overview">[\s\S]*?<span>Overview<\/span><\/button>\s*<button data-route="approvals">[\s\S]*?<span>Approvals<\/span><span class="nav-count" id="approval-count">0<\/span>/);
+ assert.match(h,/<section class="view" data-view="approvals" hidden[\s\S]*?<section class="panel approvals-panel">[\s\S]*?id="approval-list"/);
  assert.match(h,/approvalQueue\(agentPort\.list\(\),findingRepo\.agent\.list\(overviewAsOf\)\)/);
  for(const field of ['action.action_id','action.agent_id','action.action_type','action.target','action.severity','action.rule_id','action.control_refs','action.proposed_at','action.linked_finding_ids'])assert.match(h,new RegExp(field.replace('.','\\.')));
  assert.match(h,/The proposing agent must submit this action before a reviewer can approve or reject it\./);
@@ -98,6 +99,14 @@ test('approval queue UI exposes review metadata and keeps execution separate',()
  assert.doesNotMatch(h,/decided_at:new Date\(\)\.toISOString\(\)/);
  assert.match(h,/Full justification[\s\S]*Evidence linked through finding records[\s\S]*Rollback procedure/);
  assert.match(h,/This separate step records only work a human performed outside this application, after approval\. Approval itself performs no action\./);
+});
+
+test('approval badge is rendered from queue state independently of the active view',()=>{
+ const h=fs.readFileSync('src/index.html','utf8');
+ assert.match(h,/const items=approvalQueue\(agentPort\.list\(\),findingRepo\.agent\.list\(overviewAsOf\)\)/);
+ assert.match(h,/#approval-count'\)\.textContent=String\(items\.length\)/);
+ assert.match(h,/const refresh=\(\)=>\{renderApprovalQueue\(\)/);
+ assert.match(h,/renderControls\(\);renderFindings\(\);renderApprovalQueue\(\)/);
 });
 test('entire src tree contains no fetch, XMLHttpRequest, or sendBeacon',()=>{
  const files=[];

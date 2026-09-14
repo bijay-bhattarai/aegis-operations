@@ -200,6 +200,33 @@ Finding rows are ordered with overdue records first, then by computed severity. 
 - Finding rows now identify the subject by display label.
 - The finding drawer shows subject type, stable identifier, identity attributes, and rule-specific observed facts as separate keys and values.
 
+## Four routed views
+
+| Removed navigation | Current destination |
+|---|---|
+| AI workforce | Agent workforce panel on Overview |
+| Incidents | Finding type filter on Findings |
+| Exposure | Finding type filter on Findings |
+| Identity | Finding type filter on Findings |
+| Governance | Controls |
+
+- Overview
+- Approvals
+- Findings
+- Controls
+- Highest-priority open findings
+- First four at the shared snapshot
+- Finding filters
+- All severities
+- All states
+- All SLA states
+- All finding types
+- Assessment state and attribution
+
+Each view has a linkable hash and displays the same shared snapshot. Action, finding, and control drawers use nested hashes under their parent view.
+
+Unknown or incomplete drawer links return to their parent view and announce “Finding record was not found.”, “Action record was not found.”, or “Control record was not found.” in the non-blocking status notice.
+
 ## Approval queue
 
 - Approvals

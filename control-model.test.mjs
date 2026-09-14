@@ -249,5 +249,6 @@ test('agent-generated role and feed text has no forbidden verdict vocabulary',()
  assert.match(h,/statement=coverageStatement\(controlCounts\)/);
  assert.match(h,/hasNotAssessed=records\.some\(record=>effectiveStatus\(record\)==='not_assessed'\)/);
  assert.match(h,/hasNotAssessed\?'unknown':''/);
- assert.match(h,/labels\[effectiveStatus\(record\)\]\+attribution/);
+ assert.match(h,/labels\[effectiveStatus\(record\)\][\s\S]*conclusion\?\.assessor[\s\S]*conclusion\?\.assessed_at[\s\S]*record\.cycle_id/);
+ assert.match(h,/<span>Control<\/span><span>Assessment state<\/span><span>Assessor<\/span><span>Assessed at<\/span><span>Cycle<\/span>/);
 });
