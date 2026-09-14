@@ -17,7 +17,7 @@ Read HANDOFF.md before changing the application.
 
 ## Workflow
 
-- Run `node --test action-model.test.mjs control-model.test.mjs`.
+- Run `node --test action-model.test.mjs control-model.test.mjs finding-model.test.mjs`.
 - src/ is authored source with no build step. No agent should treat it as generated output.
 - Update copy ledgers for copy changes. Historical diff text is not active application copy.
 - Do not deploy, provision paid services, introduce external writers or connect real customer data without explicit authorization.

@@ -140,3 +140,9 @@ The accompanying `refactor.diff` includes every changed, deleted, and added stri
 - Collector ID
 - compliance
 - Evidence reference collected. Artifact remains unverified because this demo has no artifact resolver.
+
+## Finding SLA copy
+
+| Removed fabricated demo label | Replacement |
+|---|---|
+| VUL-SLA-001 · 24-hour remediation | VUL-SLA-001 · Rule-specific SLA |
