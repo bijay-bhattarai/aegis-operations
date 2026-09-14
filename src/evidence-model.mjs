@@ -1,4 +1,4 @@
-import {AGENT_IDS} from './action-model.mjs';
+import {AGENT_IDS,rejectAgentLikePersonId} from './identity-model.mjs';
 
 export const ArtifactType = Object.freeze({
   export:'export', screenshot:'screenshot', log_query:'log_query',
@@ -35,10 +35,7 @@ const collector=input=>{
     if(!AGENT_IDS.includes(id))throw Error('Unknown collecting agent');
     return {type:input.type,id};
   }
-  const normalizedId=id.normalize('NFKC').replace(/[​-‍﻿]/g,'');
-  // NFKC does not fold Cyrillic а; this narrow skeleton catches the documented casual homoglyph case.
-  const agentCheckId=normalizedId.replace(/[Аа]/g,'a');
-  if(AGENT_IDS.some(agentId=>agentId.toLowerCase()===agentCheckId.toLowerCase())||/agent/i.test(agentCheckId))throw Error('Person collector ID cannot identify an agent');
+  rejectAgentLikePersonId(id,'Person collector ID cannot identify an agent');
   if(input.identity_basis===undefined)throw Error('identity_basis is required for person collectors');
   if(input.identity_basis!==IdentityBasis.self_reported)throw Error('Only self_reported identity_basis is currently accepted');
   return {type:input.type,id,identity_basis:input.identity_basis};

@@ -242,3 +242,5 @@ Unknown or incomplete drawer links return to their parent view and announce “F
 - External execution attestation
 
 Proposed actions explain that the proposing agent must submit them before a reviewer can decide. Approval copy states that the decision performs no action; external execution remains a separate human attestation.
+
+Action expiry now asks for the actor type, actor identity, timestamp, and reason. External execution attestation now asks for the executor identity. These self-reported inputs provide event attribution in the session-only action history; they do not authenticate either person or system identities.

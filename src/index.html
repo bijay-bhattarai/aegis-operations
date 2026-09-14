@@ -336,9 +336,14 @@
       <label>Decision timestamp (UTC ISO 8601; reviewer-supplied, unverified)<input id="decision-time" placeholder="YYYY-MM-DDTHH:mm:ssZ" autocomplete="off"></label>
       <label>Decision rationale<textarea id="decision-rationale"></textarea></label>
       <div class="action-buttons"><button class="btn primary" data-decision="approved">Record approval</button><button class="btn" data-decision="rejected">Record rejection</button><button class="btn" id="expire-action">Expire record</button></div>
+      <label>Expiry actor type<select id="expiry-actor-type"><option value="person">Person</option><option value="agent">Agent</option><option value="system">System</option></select></label>
+      <label>Expiry actor identity (unverified demo input)<input id="expiry-actor-id" autocomplete="off"></label>
+      <label>Expiry timestamp (UTC ISO 8601; supplied, unverified)<input id="expiry-time" placeholder="YYYY-MM-DDTHH:mm:ssZ" autocomplete="off"></label>
+      <label>Expiry reason<textarea id="expiry-reason"></textarea></label>
       <p id="decision-prerequisite"></p>
       <h3>External execution attestation</h3>
       <p>This separate step records only work a human performed outside this application, after approval. Approval itself performs no action.</p>
+      <label>Executor identity (unverified demo input)<input id="execution-actor" autocomplete="off"></label>
       <label>Execution timestamp (UTC ISO 8601)<input id="execution-time" placeholder="YYYY-MM-DDTHH:mm:ss.sssZ"></label>
       <label><input type="checkbox" id="execution-attestation"> I attest that execution occurred outside this app.</label>
       <button class="btn" id="record-execution">Record external execution</button>
@@ -427,7 +432,7 @@
     ];
     for(const [action_id,agent_id,action_type,target,justification,rule_id,control_refs,severity,rollback_procedure] of seeds){
       agentPort.propose({action_id,agent_id,action_type,target,justification,rule_id,control_refs,severity,rollback_procedure,proposed_at:'2026-09-13T20:00:00Z'});
-      agentPort.submit(action_id);
+      agentPort.submit(action_id,{submitted_at:'2026-09-13T20:05:00Z'});
     }
     const actionStatusLabels={
       proposed:'Draft proposal',
@@ -446,7 +451,7 @@
       return ids.map(id=>evidenceRepo.get(id));
     };
     function renderApprovalQueue(){
-      const items=approvalQueue(agentPort.list(),findingRepo.agent.list(overviewAsOf));
+      const items=approvalQueue(agentPort.list(overviewAsOf),findingRepo.agent.list(overviewAsOf));
       document.querySelector('#approval-count').textContent=String(items.length);
       document.querySelector('#approval-summary').textContent=items.length+' action'+(items.length===1?'':'s')+' awaiting approval';
       document.querySelector('#approval-list').innerHTML=items.length?items.map(action=>
@@ -457,7 +462,7 @@
       ).join(''):'<p class="empty-queue">No actions are awaiting approval.</p>';
     }
     function showAction(id){
-      const record=agentPort.get(id),findings=linkedFindingsFor(id),evidenceRecords=evidenceForAction(id);selectedAction=id;
+      const record=agentPort.get(id,overviewAsOf),findings=linkedFindingsFor(id),evidenceRecords=evidenceForAction(id);selectedAction=id;
       document.querySelector('#action-record-title').textContent=id+' · '+actionStatusLabels[record.status];
       document.querySelector('#action-state').textContent=actionStatusLabels[record.status];
       document.querySelector('#action-state-copy').textContent=record.status==='proposed'?'The proposing agent must submit this action before a reviewer can decide it.':'This state is recorded in the session-only AgentAction model.';
@@ -488,12 +493,12 @@
     document.querySelector('#record-execution').addEventListener('click',()=>{
       try{
         if(!document.querySelector('#execution-attestation').checked)throw Error('Confirm external execution before recording it.');
-        humanReview.recordExecution(selectedAction,document.querySelector('#execution-time').value);
+        humanReview.recordExecution(selectedAction,{executor:document.querySelector('#execution-actor').value,executed_at:document.querySelector('#execution-time').value});
         refresh();notify('External execution attestation recorded. This app performed no action.');
       }catch(e){notify(e.message);}
     });
     document.querySelector('#expire-action').addEventListener('click',()=>{
-      try{humanReview.expire(selectedAction);refresh();notify('Action expired. No external action performed.');}catch(e){notify(e.message);}
+      try{humanReview.expire(selectedAction,{actor:{type:document.querySelector('#expiry-actor-type').value,id:document.querySelector('#expiry-actor-id').value},expired_at:document.querySelector('#expiry-time').value,reason:document.querySelector('#expiry-reason').value});refresh();notify('Action expired. No external action performed.');}catch(e){notify(e.message);}
     });
 
     const {evidenceRepo,controlRepo,findingRepo,cycle,snapshot}=createDemoOverview();
@@ -562,7 +567,7 @@
     const routeTitles={overview:'Operations overview',approvals:'Approvals',findings:'Findings',controls:'Controls'};
     function navigateRoute(){
       const route=resolveAppRoute(location.hash,{
-        action:agentPort.list().map(record=>record.action_id),
+        action:agentPort.list(overviewAsOf).map(record=>record.action_id),
         finding:findingRepo.agent.list(overviewAsOf).map(record=>record.finding_id),
         control:controlRepo.agent.list().map(record=>record.control_id)
       });
@@ -588,9 +593,9 @@
       try{Promise.resolve(document.modelContext.registerTool({
         name:'inspect_agent_action',title:'Inspect agent action',
         description:'Read a proposal record. No decision or external action is available.',
-        inputSchema:{type:'object',properties:{action_id:{type:'string',enum:agentPort.list().map(a=>a.action_id)}},required:['action_id'],additionalProperties:false},
+        inputSchema:{type:'object',properties:{action_id:{type:'string',enum:agentPort.list(overviewAsOf).map(a=>a.action_id)}},required:['action_id'],additionalProperties:false},
         annotations:{readOnlyHint:true,untrustedContentHint:false},
-        execute(input){if(!input||Object.keys(input).some(k=>k!=='action_id'))throw Error('Invalid input');return agentPort.get(input.action_id);}
+        execute(input){if(!input||Object.keys(input).some(k=>k!=='action_id'))throw Error('Invalid input');return agentPort.get(input.action_id,overviewAsOf);}
       },{signal:lifecycle.signal})).catch(()=>{});}catch{}
       window.addEventListener('pagehide',()=>lifecycle.abort(),{once:true});
     }
