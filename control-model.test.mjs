@@ -246,6 +246,8 @@ test('agent-generated case and feed text has no forbidden verdict vocabulary',()
  const content=h.slice(h.indexOf('const agents ='),h.indexOf('const caseActions='));
  assert.doesNotMatch(content,/\b(compliant|effective|secure|within policy|validated|operating correctly|all clear|nominal)\b/i);
  assert.doesNotMatch(h,/97%|94%|91%|99\.2%|87 \/ 100/);
- assert.match(h,/Not yet tested',counts.not_assessed,'unknown'/);
+ assert.match(h,/statement=coverageStatement\(controlCounts\)/);
+ assert.match(h,/hasNotAssessed=records\.some\(record=>effectiveStatus\(record\)==='not_assessed'\)/);
+ assert.match(h,/hasNotAssessed\?'unknown':''/);
  assert.match(h,/labels\[effectiveStatus\(record\)\]\+attribution/);
 });

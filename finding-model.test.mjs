@@ -6,7 +6,8 @@ import {
   DEFAULT_SEVERITY_POLICIES,DEFAULT_SLA_POLICIES,createFindingRepository,findingIndicators
 } from './src/finding-model.mjs';
 import {createEvidenceRepository} from './src/evidence-model.mjs';
-import {createControlRepository} from './src/control-model.mjs';
+import {createControlRepository,coverage,coverageStatement} from './src/control-model.mjs';
+import {createDemoOverview,OVERVIEW_AS_OF} from './src/demo-overview-model.mjs';
 
 const artifact=value=>({type:'log_query',locator:'artifact://session/finding/'+value,content_hash:{algorithm:'sha256',value:value.repeat(64)}});
 const evidence=id=>({evidence_id:id,source:'Defender',collected_by:{type:'agent',id:'vuln'},collected_at:'2026-09-01T00:00:00Z',artifact_ref:artifact(id==='E1'?'a':'b')});
@@ -225,4 +226,53 @@ test('historical lists omit findings that did not yet exist',()=>{
 
 test('the fabricated 24-hour SLA label is absent from authored application source',()=>{
  assert.doesNotMatch(fs.readFileSync('src/index.html','utf8'),/VUL-SLA-001 · 24-hour remediation/);
+});
+
+test('dashboard indicators share one explicit as_of and are computed from repository records',()=>{
+ const html=fs.readFileSync('src/index.html','utf8'),demo=fs.readFileSync('src/demo-overview-model.mjs','utf8');
+ assert.equal((demo.match(/export const OVERVIEW_AS_OF=/g)||[]).length,1);
+ assert.match(html,/OVERVIEW_AS_OF as overviewAsOf/);
+ assert.match(html,/const findingCounts=findingIndicators\(findingRepo\.agent\.list\(overviewAsOf\),overviewAsOf\)/);
+ assert.match(html,/const controlCounts=coverage\(records,cycle\.cycle_id\),statement=coverageStatement\(controlCounts\)/);
+ for(const indicator of ['control-coverage','open-findings','overdue-findings'])assert.match(html,new RegExp('data-indicator="'+indicator+'"'));
+ assert.equal((html.match(/<div class="metric-label">As of /g)||[]).length,3);
+ assert.doesNotMatch(html,/id="coverage-metrics"/);
+});
+
+test('dashboard demo findings cover every severity, closure, overdue state and expired acceptance',()=>{
+ const {controlRepo,findingRepo,cycle,as_of}=createDemoOverview();
+ assert.equal(as_of,OVERVIEW_AS_OF);
+ assert.equal(coverageStatement(coverage(controlRepo.agent.list(),cycle.cycle_id)),'5 controls in scope. 2 tested this cycle, 1 passed, 1 failed, 3 not yet tested.');
+ assert.equal(controlRepo.agent.get('CTRL-01').status,'tested_pass');assert.equal(controlRepo.agent.get('CTRL-01').assessor,'Demo reviewer');
+ assert.equal(controlRepo.agent.get('CTRL-04').status,'tested_fail');assert.equal(controlRepo.agent.get('CTRL-04').assessor,'Demo reviewer');
+ assert.equal(controlRepo.agent.get('CTRL-02').status,'evidence_collected');
+ const indicators=findingIndicators(findingRepo.agent.list(as_of),as_of);
+ assert.deepEqual(indicators.open_findings_by_severity,{low:1,medium:1,high:1,critical:1});
+ assert.deepEqual(indicators.overdue_findings_by_severity,{low:0,medium:1,high:1,critical:1});
+ const expired=findingRepo.agent.get('F-DEMO-MEDIUM',as_of),closed=findingRepo.agent.get('F-DEMO-CLOSED',as_of);
+ assert.equal(expired.disposition,'risk_accepted');assert.equal(expired.current_state,'open');
+ assert.equal(closed.current_state,'closed');
+});
+
+test('dashboard prominence ranks not_assessed above overdue and overdue above open',()=>{
+ const html=fs.readFileSync('src/index.html','utf8');
+ assert.match(html,/\.metric\.open-findings\{border-width:1px\}/);
+ assert.match(html,/\.metric\.overdue-findings\{border:2px solid var\(--red\);[^}]*padding:17px/);
+ assert.match(html,/\.metric\.unknown\{[^}]*padding:20px;border:3px solid/);
+ assert.match(html,/#control-list button\[data-status=not_assessed\]\{[^}]*border:3px solid/);
+});
+
+test('overview headline greets and orients without duplicating the coverage statement',()=>{
+ const html=fs.readFileSync('src/index.html','utf8');
+ assert.match(html,/<h2 id="overview-title">Welcome back, Bijay\.<\/h2>/);
+ assert.match(html,/Review control coverage, open findings, and overdue work at the shared snapshot below\./);
+ assert.doesNotMatch(html,/#overview-title'\)\.textContent=statement/);
+});
+
+test('agent tiles describe roles with readable statuses and avoid repeated overview dates',()=>{
+ const html=fs.readFileSync('src/index.html','utf8'),tiles=html.slice(html.indexOf('<div class="agent-list"'),html.indexOf('<div class="agent-detail"'));
+ for(const copy of ['Correlates identity, endpoint, cloud, and network evidence','Prioritizes exposure evidence with SSVC','Reviews sign-ins, privileges, and access evidence','Maps collected evidence to control criteria','Drafts detection changes with rollback guidance'])assert.match(tiles,new RegExp(copy));
+ assert.match(tiles,/Ready for review/);assert.match(tiles,/Awaiting approval/);
+ assert.doesNotMatch(tiles,/Observed rule proposal|September 2026 UTC/);
+ assert.doesNotMatch(html,/<h3>Control records · September 2026 UTC<\/h3>|cycle September 2026 UTC<\/small>/);
 });

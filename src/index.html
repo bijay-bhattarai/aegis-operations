@@ -67,10 +67,16 @@
     .hero h2 { font-size: clamp(1.4rem, 2vw, 2rem); line-height: 1.12; letter-spacing: -.04em; max-width: 620px; margin: 8px 0 7px; }
     .hero p { margin: 0; max-width: 640px; color: var(--muted); line-height:1.55; font-size:.9rem; }
     .trust { border: 1px solid rgba(110,242,197,.25); background: rgba(110,242,197,.07); color: var(--mint); padding: 8px 10px; border-radius: 9px; white-space:nowrap; font: 700 .7rem/1 ui-monospace, monospace; letter-spacing:.04em; }
-    .metric-row { display:grid; grid-template-columns: repeat(4,1fr); gap: 10px; margin-top: 24px; position:relative; z-index:1; }
-    .metric { border-top: 1px solid var(--line); padding-top: 13px; }
+    .metric-row { display:grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 12px; margin-top: 24px; position:relative; z-index:1; }
+    .metric { border:1px solid var(--line); border-radius:10px; padding:14px; background:rgba(255,255,255,.015); }
+    .metric-title { color:var(--muted); font-size:.7rem; font-weight:800; letter-spacing:.08em; text-transform:uppercase; }
     .metric-value { font: 650 1.45rem/1 ui-monospace, SFMono-Regular, Menlo, monospace; letter-spacing:-.05em; }
+    .metric-statement { margin-top:10px; font:750 .92rem/1.45 Inter,system-ui,sans-serif; letter-spacing:-.01em; }
     .metric-label { color: var(--muted); margin-top:7px; font-size:.72rem; line-height:1.25; }
+    .severity-counts { display:grid; grid-template-columns:repeat(4,1fr); gap:7px; margin-top:11px; }
+    .severity-count { border-top:2px solid var(--line-strong); padding-top:8px; }
+    .severity-count strong { display:block; font:750 1.2rem/1 ui-monospace,monospace; }
+    .severity-count span { display:block; color:var(--muted); margin-top:5px; font-size:.65rem; text-transform:capitalize; }
     .metric-value.mint { color:var(--mint); }
     .metric-value.amber { color:var(--amber); }
     .metric-value.red { color:var(--red); }
@@ -185,10 +191,13 @@
 
     #control-panel{margin-top:20px}
     #control-list button{display:block;width:100%;background:transparent;color:var(--text);border:0;border-bottom:1px solid var(--line);padding:14px;text-align:left;font-size:1rem}
-    #control-list button[data-status=not_assessed]{background:#f2bb68;color:#171008;font-weight:800;border:2px solid #ffe2b2}
+    #control-list button[data-status=not_assessed]{background:#f2bb68;color:#171008;font-weight:850;border:3px solid #ffe2b2;box-shadow:0 0 0 3px rgba(242,187,104,.16)}
     #control-list button[data-status=tested_fail]{border-left:3px solid var(--red)}
-    .metric.unknown{background:#f2bb68;color:#171008;padding:14px;border-radius:10px}
-    .metric.unknown .metric-label{color:#171008;font-weight:800}
+    .metric.open-findings{border-width:1px}
+    .metric.overdue-findings{border:2px solid var(--red);background:rgba(255,106,106,.09);padding:17px;box-shadow:0 0 22px rgba(255,106,106,.08)}
+    .metric.overdue-findings .severity-count{border-color:var(--red)}
+    .metric.unknown{grid-column:1 / -1;background:#f2bb68;color:#171008;padding:20px;border:3px solid #ffe2b2;box-shadow:0 0 0 3px rgba(242,187,104,.18),0 10px 30px rgba(0,0,0,.28)}
+    .metric.unknown .metric-title,.metric.unknown .metric-label{color:#171008;font-weight:850}
     .metric-label{font-size:.875rem}
     #control-dialog label{display:block;margin-top:12px}
     #control-dialog input,#control-dialog textarea,#control-dialog select{display:block;width:100%;padding:10px;background:var(--panel);color:var(--text);border:1px solid var(--line);font:inherit}
@@ -196,6 +205,7 @@
     #control-list small{display:block;margin-top:6px;font-size:.875rem}
     .agent-task{height:auto}.icon-btn{flex-shrink:0}
     .hero h2{font-size:1.5rem}
+    @media(max-width:720px){.metric-row{grid-template-columns:1fr}.metric.unknown{grid-column:auto}.severity-counts{grid-template-columns:repeat(2,1fr)}}
   </style>
 </head>
 <body>
@@ -215,48 +225,48 @@
         <button data-scroll="governance"><span class="nav-icon">GV</span><span>Governance</span></button>
       </nav>
       <div class="side-bottom">
-        <div class="system-card"><div class="system-row"><span class="pulse"></span><span>Proposal-only model</span></div><p>Agent scope · September 2026 UTC</p></div>
+        <div class="system-card"><div class="system-row"><span class="pulse"></span><span>Proposal-only model</span></div><p>Agents collect evidence and propose actions for review.</p></div>
       </div>
     </aside>
 
     <main>
       <header class="topbar">
-        <div><div class="eyebrow">Security command center</div><h1>Assessment observations</h1></div>
+        <div><div class="eyebrow">Security command center</div><h1>Operations overview</h1></div>
         <div class="top-actions"><span class="scope">Acme Cloud · Session-only demo</span><button class="icon-btn" aria-label="View observation window">i</button></div>
       </header>
 
       <div class="grid">
         <section class="hero" aria-labelledby="overview-title">
           <div class="hero-top">
-            <div><div class="eyebrow">Assessment cycle · September 2026 UTC</div><h2 id="overview-title">Coverage counts pending record initialization.</h2><p>Demo observations. No authenticated assessment records. Refresh resets this session.</p></div>
-            <div class="trust">Cycle · September 2026 UTC</div>
+            <div><div class="eyebrow">Today’s review</div><h2 id="overview-title">Welcome back, Bijay.</h2><p>Review control coverage, open findings, and overdue work at the shared snapshot below.</p></div>
+            <div class="trust">Session-only demo</div>
           </div>
-<div class="metric-row" id="coverage-metrics"></div><section class="panel" id="control-panel"><div class="panel-head"><h3>Control records · September 2026 UTC</h3><span>Not assessed first</span></div><div id="control-list"></div></section>
+<div class="metric-row" id="overview-indicators"></div><section class="panel" id="control-panel"><div class="panel-head"><h3>Control records</h3><span>Needs assessment first</span></div><div id="control-list"></div></section>
         </section>
 
         <aside class="panel activity-panel" aria-labelledby="activity-title">
-          <div class="panel-head"><h3 id="activity-title">Agent proposals</h3><span>Observations · September 2026 UTC</span></div>
+          <div class="panel-head"><h3 id="activity-title">Agent proposals</h3><span>Awaiting human decisions</span></div>
           <div class="activity-list" id="action-feed"></div></aside>
 
         <section class="panel agents-panel" id="agents" aria-labelledby="agents-title">
-          <div class="panel-head"><h3 id="agents-title">AI security workforce</h3><span>Agent scope · September 2026 UTC</span></div>
+          <div class="panel-head"><h3 id="agents-title">AI security workforce</h3><span>Five supervised roles</span></div>
           <div class="agent-list" role="tablist" aria-label="Security agents">
-            <button class="agent active" role="tab" aria-selected="true" data-agent="soc"><span class="agent-badge">SO</span><div class="agent-name">SOC Agent</div><div class="agent-task">Observed alert records · September 2026 UTC</div><div class="agent-status">Pending review</div></button>
-            <button class="agent" role="tab" aria-selected="false" data-agent="vuln"><span class="agent-badge">VM</span><div class="agent-name">Vulnerability</div><div class="agent-task">Observed exposure records · September 2026 UTC</div><div class="agent-status">Pending review</div></button>
-            <button class="agent" role="tab" aria-selected="false" data-agent="identity"><span class="agent-badge">ID</span><div class="agent-name">Identity Agent</div><div class="agent-task">Observed authentication records · September 2026 UTC</div><div class="agent-status">Pending review</div></button>
-            <button class="agent" role="tab" aria-selected="false" data-agent="compliance"><span class="agent-badge">CO</span><div class="agent-name">Compliance</div><div class="agent-task">Collected control evidence · September 2026 UTC</div><div class="agent-status">Pending review</div></button>
-            <button class="agent" role="tab" aria-selected="false" data-agent="engineering"><span class="agent-badge">SE</span><div class="agent-name">Engineering</div><div class="agent-task">Observed rule proposal · September 2026 UTC</div><div class="agent-status review">Approval</div></button>
+            <button class="agent active" role="tab" aria-selected="true" data-agent="soc"><span class="agent-badge">SO</span><div class="agent-name">SOC Agent</div><div class="agent-task">Correlates identity, endpoint, cloud, and network evidence</div><div class="agent-status">Ready for review</div></button>
+            <button class="agent" role="tab" aria-selected="false" data-agent="vuln"><span class="agent-badge">VM</span><div class="agent-name">Vulnerability</div><div class="agent-task">Prioritizes exposure evidence with SSVC</div><div class="agent-status">Ready for review</div></button>
+            <button class="agent" role="tab" aria-selected="false" data-agent="identity"><span class="agent-badge">ID</span><div class="agent-name">Identity Agent</div><div class="agent-task">Reviews sign-ins, privileges, and access evidence</div><div class="agent-status">Ready for review</div></button>
+            <button class="agent" role="tab" aria-selected="false" data-agent="compliance"><span class="agent-badge">CO</span><div class="agent-name">Compliance</div><div class="agent-task">Maps collected evidence to control criteria</div><div class="agent-status">Ready for review</div></button>
+            <button class="agent" role="tab" aria-selected="false" data-agent="engineering"><span class="agent-badge">SE</span><div class="agent-name">Engineering</div><div class="agent-task">Drafts detection changes with rollback guidance</div><div class="agent-status review">Awaiting approval</div></button>
           </div>
           <div class="agent-detail" id="agent-detail" role="tabpanel"></div>
         </section>
       </div>
 
       <section class="panel cases-panel" id="cases" aria-labelledby="cases-title">
-        <div class="panel-head"><h3 id="cases-title">Case observations · September 2026 UTC</h3><span>Select a case to inspect the evidence trail</span></div>
+        <div class="panel-head"><h3 id="cases-title">Case observations</h3><span>Evidence window · September 2026 UTC</span></div>
         <div class="case-row case-header"><span>Case</span><span>Observation</span><span>Assessment</span><span>Window</span><span>Status</span></div>
-        <div class="case-row" role="button" tabindex="0" data-open-case="INC-2841"><span class="case-id">INC-2841</span><span class="case-title">Microsoft 365 sign-in and download records</span><span>Pending review</span><span>September 2026 UTC</span><span class="state">Approval</span></div>
-        <div class="case-row" role="button" tabindex="0" data-open-case="VUL-9912"><span class="case-id">VUL-9912</span><span class="case-title">Gateway inventory and exposure records</span><span>Pending review</span><span>September 2026 UTC</span><span class="state">Assigned</span></div>
-        <div class="case-row" role="button" tabindex="0" data-open-case="IAM-2204"><span class="case-id">IAM-2204</span><span class="case-title">Account activity and entitlement records</span><span>Pending review</span><span>September 2026 UTC</span><span class="state">Review</span></div>
+        <div class="case-row" role="button" tabindex="0" data-open-case="INC-2841"><span class="case-id">INC-2841</span><span class="case-title">Microsoft 365 sign-in and download records</span><span>Pending review</span><span>Current window</span><span class="state">Awaiting approval</span></div>
+        <div class="case-row" role="button" tabindex="0" data-open-case="VUL-9912"><span class="case-id">VUL-9912</span><span class="case-title">Gateway inventory and exposure records</span><span>Pending review</span><span>Current window</span><span class="state">Assigned for review</span></div>
+        <div class="case-row" role="button" tabindex="0" data-open-case="IAM-2204"><span class="case-id">IAM-2204</span><span class="case-title">Account activity and entitlement records</span><span>Pending review</span><span>Current window</span><span class="state">Needs review</span></div>
       </section>
 
       <section class="panel governance" id="governance" aria-labelledby="gov-heading">
@@ -312,13 +322,15 @@
 
   <script type="module">
     import { createActionRepository } from "./action-model.mjs";
-    import { createControlRepository, coverage, coverageStatement, conclusionFor, effectiveStatus, sortControls } from "./control-model.mjs";
+    import { coverage, coverageStatement, conclusionFor, effectiveStatus, sortControls } from "./control-model.mjs";
+    import { findingIndicators, Severity } from "./finding-model.mjs";
+    import { createDemoOverview, OVERVIEW_AS_OF as overviewAsOf } from "./demo-overview-model.mjs";
     const agents = {
-      soc: { title: 'SOC Agent · Observations', copy: 'Observed identity, endpoint, cloud, and network records; pending review.', procedure: 'Active procedure: Account takeover triage v3.2', frameworks: ['NIST SP 800-61r3', 'MITRE ATT&CK', 'CIS Control 13', 'Internal IR-01'] },
-      vuln: { title: 'Vulnerability Agent · Observations', copy: 'Collected exposure, exploit-reference, asset, and control records; pending review.', procedure: 'Active procedure: Risk-based remediation v2.8', frameworks: ['CISA KEV', 'CVSS v4.0', 'NIST SP 800-40', 'CIS Control 7'] },
-      identity: { title: 'Identity Agent · Observations', copy: 'Collected sign-in, privilege, account-activity, and access records; pending review.', procedure: 'Active procedure: Privileged access review v4.1', frameworks: ['NIST SP 800-63-4', 'Zero Trust', 'CIS Control 6', 'IAM-IR-004'] },
-      compliance: { title: 'Compliance Agent · Evidence collection', copy: 'Collected evidence for control criteria; pending review.', procedure: 'Active procedure: Continuous control test v2.4', frameworks: ['NIST CSF 2.0', 'NIST SP 800-53', 'SOC 2', 'ISO 27001'] },
-      engineering: { title: 'Security Engineering Agent · Observations', copy: 'Collected detection-rule and change-impact records; pending review.', procedure: 'Awaiting approval: Sentinel rule CR-118', frameworks: ['CIS Benchmarks', 'NIST SSDF', 'Change Mgmt', 'MITRE ATT&CK'] }
+      soc: { title: 'SOC Agent', copy: 'Correlates identity, endpoint, cloud, and network evidence, then drafts response proposals for human review.', procedure: 'Active procedure: Account takeover triage v3.2', frameworks: ['NIST SP 800-61r3', 'MITRE ATT&CK', 'CIS Control 13', 'Internal IR-01'] },
+      vuln: { title: 'Vulnerability Agent', copy: 'Evaluates exposure, exploit, asset, and control evidence to prioritize human review.', procedure: 'Active procedure: Risk-based remediation v2.8', frameworks: ['CISA KEV', 'CVSS v4.0', 'NIST SP 800-40', 'CIS Control 7'] },
+      identity: { title: 'Identity Agent', copy: 'Reviews sign-ins, privileges, account activity, and access evidence, then drafts access proposals.', procedure: 'Active procedure: Privileged access review v4.1', frameworks: ['NIST SP 800-63-4', 'Zero Trust', 'CIS Control 6', 'IAM-IR-004'] },
+      compliance: { title: 'Compliance Agent', copy: 'Collects evidence, maps it to control criteria, and prepares records for human assessment.', procedure: 'Active procedure: Continuous control test v2.4', frameworks: ['NIST CSF 2.0', 'NIST SP 800-53', 'SOC 2', 'ISO 27001'] },
+      engineering: { title: 'Security Engineering Agent', copy: 'Reviews detection coverage and drafts rule changes with rollback guidance for approval.', procedure: 'Awaiting approval: Sentinel rule CR-118', frameworks: ['CIS Benchmarks', 'NIST SSDF', 'Change Mgmt', 'MITRE ATT&CK'] }
     };
     const cases = {
       'INC-2841': { id:'INC-2841 · SOC + Identity', title:'Sign-in and download observations', verdict:'Pending review',  copy:'Sign-in, authentication-method, download, and threat-feed records collected during September 2026 UTC.', procedure:'Identity Compromise Playbook v3.2', framework:'MITRE ATT&CK T1078 · NIST SP 800-61r3', policy:'IAM-IR-004 · Human approval required', action:'Proposed identity containment', actionCopy:'Proposed session revocation, temporary sign-in restriction, and incident documentation. Human review required; no response will be performed by this app.', evidence:[['Sign-in location records','Observed sign-in records: Atlanta and Bucharest; 14-minute interval during September 2026 UTC.','Entra ID'],['Authentication-method record','Observed authenticator-registration record with an unmanaged-device attribute.','Identity'],['SharePoint download records','Observed 312 file-download entries after the second sign-in during September 2026 UTC.','M365'],['Threat-feed records','Observed source-IP entries in two threat-feed records during September 2026 UTC.','Intel']] },
@@ -369,26 +381,37 @@
       agentPort.submit(action_id);
     }
     const feed=[
-      ['ACT-SOC-001','SOC Agent collected signal records · September 2026 UTC','Collected observations; response proposal pending review.'],
-      ['ACT-ID-001','Identity Agent collected authentication records · September 2026 UTC','Collected observations; decision pending review under IAM-IR-004.'],
-      ['ACT-VUL-001','Vulnerability Agent collected CVE records · September 2026 UTC','Collected exposure and KEV evidence; pending review.'],
-      ['ACT-CO-001','Compliance Agent collected SOC 2 CC6.1 evidence · September 2026 UTC','Collected control evidence; pending review.'],
-      ['ACT-SE-001','Engineering Agent observed a rule proposal · September 2026 UTC','Observed Sentinel rule proposal with ATT&CK T1078 reference.']
+      ['ACT-SOC-001','SOC Agent prepared a response proposal','Sign-in and download evidence is ready for human review.'],
+      ['ACT-ID-001','Identity Agent prepared an access proposal','Authentication evidence is ready for a decision under IAM-IR-004.'],
+      ['ACT-VUL-001','Vulnerability Agent prioritized an exposure','Exposure and KEV evidence is ready for human review.'],
+      ['ACT-CO-001','Compliance Agent prepared a control record','SOC 2 CC6.1 evidence is ready for human assessment.'],
+      ['ACT-SE-001','Engineering Agent drafted a detection change','The Sentinel rule proposal and ATT&CK mapping are ready for approval.']
     ];
     const caseActions={'INC-2841':'ACT-SOC-001','VUL-9912':'ACT-VUL-001','IAM-2204':'ACT-ID-002'};
+    const actionStatusLabels={
+      proposed:'Draft proposal',
+      pending_approval:'Awaiting approval',
+      approved:'Approved by reviewer',
+      rejected:'Declined by reviewer',
+      expired:'Review window ended',
+      executed:'Human execution recorded'
+    };
     const esc=value=>String(value).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
     const actionDialog=document.querySelector('#action-dialog');
     let selectedAction=null;
     function renderFeed(){
       document.querySelector('#action-feed').innerHTML=feed.map(([id,title,copy])=>{
         const action=agentPort.get(id);
-        return '<article class="activity"><div class="trail"><span class="dot mint"></span></div><div><h4>'+esc(title)+'</h4><p>'+esc(copy)+'</p><a href="#action/'+id+'">'+id+'</a> <span class="status-badge">'+action.status+'</span></div></article>';
+        return '<article class="activity"><div class="trail"><span class="dot mint"></span></div><div><h4>'+esc(title)+'</h4><p>'+esc(copy)+'</p><a href="#action/'+id+'">'+id+'</a> <span class="status-badge">'+esc(actionStatusLabels[action.status])+'</span></div></article>';
       }).join('');
-      document.querySelectorAll('.case-row[data-open-case]').forEach(row=>row.querySelector('.state').textContent=agentPort.get(caseActions[row.dataset.openCase]).status);
+      document.querySelectorAll('.case-row[data-open-case]').forEach(row=>{
+        const status=agentPort.get(caseActions[row.dataset.openCase]).status;
+        row.querySelector('.state').textContent=actionStatusLabels[status];
+      });
     }
     function showAction(id){
       const record=agentPort.get(id); selectedAction=id;
-      document.querySelector('#action-record-title').textContent=id+' · '+record.status;
+      document.querySelector('#action-record-title').textContent=id+' · '+actionStatusLabels[record.status];
       document.querySelector('#action-record').textContent=JSON.stringify({...record,severity:'Pending review (unassessed proposal metadata withheld)'},null,2);
       document.querySelectorAll('[data-decision]').forEach(b=>b.disabled=record.status!=='pending_approval');
       document.querySelector('#record-execution').disabled=record.status!=='approved';
@@ -423,31 +446,26 @@
       try{humanReview.expire(selectedAction);refresh();notify('Action expired. No external action performed.');}catch(e){notify(e.message);}
     });
 
-    const cycle={cycle_id:'2026-09',cycle_start:'2026-09-01T00:00:00Z',cycle_end:'2026-10-01T00:00:00Z'};
-    const controlRepo=createControlRepository();
-    for(const [control_id,name] of [['CTRL-01','Sign-in review'],['CTRL-02','Exposure review'],['CTRL-03','Access review'],['CTRL-04','SOC 2 CC6.1 evidence'],['CTRL-05','Detection review']])controlRepo.add({control_id,name,...cycle});
-    for(const id of ['CTRL-01','CTRL-04']) {
-      const identityControl=id==='CTRL-01';
-      controlRepo.agent.collect(id,{
-        evidence_id:id+'-E1',source:identityControl?'Entra ID':'GRC',
-        collected_by:{type:'agent',id:identityControl?'identity':'compliance'},
-        collected_at:'2026-09-13T20:00:00Z',
-        artifact_ref:{
-          type:identityControl?'log_query':'config_snapshot',locator:'artifact://session/demo/'+id.toLowerCase(),
-          content_hash:{algorithm:'sha256',value:identityControl?'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa':'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb'}
-        }
-      });
-    }
+    const {controlRepo,findingRepo,cycle}=createDemoOverview();
     const controlDialog=document.querySelector('#control-dialog');let selectedControl;
     const labels={not_assessed:'Not assessed',evidence_collected:'Evidence collected · pending review',tested_pass:'Tested pass',tested_fail:'Tested fail',exception_approved:'Exception approved'};
+    const severityBands=Object.values(Severity).reverse();
+    const severityCounts=counts=>severityBands.map(level=>'<div class="severity-count"><strong>'+counts[level]+'</strong><span>'+level+'</span></div>').join('');
+    function renderOverview(records){
+      const controlCounts=coverage(records,cycle.cycle_id),statement=coverageStatement(controlCounts);
+      const findingCounts=findingIndicators(findingRepo.agent.list(overviewAsOf),overviewAsOf);
+      const hasNotAssessed=records.some(record=>effectiveStatus(record)==='not_assessed');
+      document.querySelector('#overview-indicators').innerHTML=
+        '<article class="metric control-coverage '+(hasNotAssessed?'unknown':'')+'" data-indicator="control-coverage"><div class="metric-title">Control coverage</div><div class="metric-value metric-statement">'+esc(statement)+'</div><div class="metric-label">As of '+esc(overviewAsOf)+'</div></article>'+
+        '<article class="metric open-findings" data-indicator="open-findings"><div class="metric-title">Open findings by severity</div><div class="severity-counts">'+severityCounts(findingCounts.open_findings_by_severity)+'</div><div class="metric-label">As of '+esc(findingCounts.as_of)+'</div></article>'+
+        '<article class="metric overdue-findings" data-indicator="overdue-findings"><div class="metric-title">Overdue findings by severity</div><div class="severity-counts">'+severityCounts(findingCounts.overdue_findings_by_severity)+'</div><div class="metric-label">As of '+esc(findingCounts.as_of)+'</div></article>';
+    }
     function renderControls(){
-      const records=controlRepo.agent.list(),counts=coverage(records,cycle.cycle_id);
-      document.querySelector('#overview-title').textContent=coverageStatement(counts);
-      document.querySelector('#coverage-metrics').innerHTML=[['Not yet tested',counts.not_assessed,'unknown'],['Tested',counts.tested,''],['Passed',counts.passed,''],['Failed',counts.failed,'']].map(([label,n,kind])=>'<div class="metric '+kind+'"><div class="metric-value">'+n+'</div><div class="metric-label">'+label+' · 2026-09-01–2026-10-01 UTC</div></div>').join('');
+      const records=controlRepo.agent.list();renderOverview(records);
       document.querySelector('#control-list').innerHTML=sortControls(records).map(record=>{
         const conclusion=conclusionFor(record);
         const attribution=conclusion?' · '+esc(conclusion.assessor)+' · '+esc(conclusion.assessed_at):'';
-        return '<button data-control-id="'+record.control_id+'" data-status="'+effectiveStatus(record)+'">'+esc(record.name)+'<small>'+labels[effectiveStatus(record)]+attribution+' · cycle September 2026 UTC</small></button>';
+        return '<button data-control-id="'+record.control_id+'" data-status="'+effectiveStatus(record)+'">'+esc(record.name)+'<small>'+labels[effectiveStatus(record)]+attribution+'</small></button>';
       }).join('');
     }
     function showControl(id){

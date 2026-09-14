@@ -146,3 +146,35 @@ The accompanying `refactor.diff` includes every changed, deleted, and added stri
 | Removed fabricated demo label | Replacement |
 |---|---|
 | VUL-SLA-001 · 24-hour remediation | VUL-SLA-001 · Rule-specific SLA |
+
+## Computed overview indicators
+
+- Control coverage
+- Open findings by severity
+- Overdue findings by severity
+- As of 2026-09-14T23:00:00Z
+- Critical-priority demo observation
+- High-priority demo observation
+- Expired acceptance demo observation
+- Low-priority demo observation
+- Human-closed demo observation
+
+## Overview readability pass
+
+| Previous | Current |
+|---|---|
+| Assessment observations | Operations overview |
+| Coverage counts pending record initialization. | Welcome back, Bijay. |
+| Demo observations. No authenticated assessment records. Refresh resets this session. | Review control coverage, open findings, and overdue work at the shared snapshot below. |
+| Assessment cycle · September 2026 UTC | Today’s review |
+| Cycle · September 2026 UTC | Session-only demo |
+| Control records · September 2026 UTC | Control records |
+| Not assessed first | Needs assessment first |
+| Observations · September 2026 UTC | Awaiting human decisions |
+| Agent scope · September 2026 UTC | Five supervised roles |
+| Pending review | Ready for review |
+| Raw action states such as `pending_approval` | Reader-facing labels such as `Awaiting approval` |
+| Approval | Awaiting approval |
+| Observed rule proposal · September 2026 UTC | Drafts detection changes with rollback guidance |
+
+Agent tiles now describe each role’s work: correlating operational evidence, prioritizing exposure evidence with SSVC, reviewing identity evidence, mapping evidence to controls, and drafting detection changes. Repeated cycle labels were removed from the overview, agent tiles, proposal feed, and control rows; evidence records retain dates where they establish provenance.
