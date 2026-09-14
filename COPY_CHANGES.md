@@ -191,6 +191,15 @@ Agent tiles now describe each role’s work: correlating operational evidence, p
 
 Finding rows are ordered with overdue records first, then by computed severity. Each row presents the owner and SLA state from the projection at the shared snapshot.
 
+## Microsoft Entra finding provenance
+
+- The five `F-DEMO-*` finding labels were removed.
+- The finding table now renders ten `IAM-0001` through `IAM-0010` records derived from the supplied Microsoft Entra ID entitlement export.
+- The finding-section header shows the evidence collection timestamp and a truncated SHA-256 from the shared evidence record.
+- The identity action copy now names the R04 disabled-account entitlement observation and the R01 cross-department privileged-role observation that each proposal references.
+- Finding rows now identify the subject by display label.
+- The finding drawer shows subject type, stable identifier, identity attributes, and rule-specific observed facts as separate keys and values.
+
 ## Approval queue
 
 - Approvals

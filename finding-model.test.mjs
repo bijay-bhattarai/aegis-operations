@@ -1,24 +1,29 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
+import crypto from 'node:crypto';
 import {
-  FindingType,FindingState,FindingDisposition,FindingEventType,FindingActorType,Severity,
+  FindingType,FindingState,FindingDisposition,FindingEventType,FindingActorType,FindingSubjectType,Severity,
   DEFAULT_SEVERITY_POLICIES,DEFAULT_SLA_POLICIES,createFindingRepository,findingIndicators
 } from './src/finding-model.mjs';
 import {createEvidenceRepository} from './src/evidence-model.mjs';
 import {createControlRepository,coverage,coverageStatement} from './src/control-model.mjs';
 import {createDemoOverview,OVERVIEW_AS_OF,sortOverviewFindings} from './src/demo-overview-model.mjs';
+import {ENTRA_FINDING_SEEDS,ENTRA_QUEUE_RULES,ENTRA_SNAPSHOT} from './src/entra-finding-seeds.mjs';
 
 const artifact=value=>({type:'log_query',locator:'artifact://session/finding/'+value,content_hash:{algorithm:'sha256',value:value.repeat(64)}});
 const evidence=id=>({evidence_id:id,source:'Defender',collected_by:{type:'agent',id:'vuln'},collected_at:'2026-09-01T00:00:00Z',artifact_ref:artifact(id==='E1'?'a':'b')});
 const ssvc=(overrides={})=>({ssvc:{exploitation:'active',automatable:'yes',technical_impact:'total',mission_prevalence:'essential',public_wellbeing_impact:'material',...overrides},modifiers:[]});
 const matrix=(likelihood='medium',impact='medium',modifiers=[])=>({risk_matrix:{likelihood,impact},modifiers});
+const assetSubject={type:'asset',id:{namespace:'inventory',value:'gateway-1'},label:'Internet gateway',details:{}};
+const userSubject={type:'user',id:{namespace:'microsoft_entra_id',value:'user-1'},label:'Example User',details:{principal_name:'user@example.test',department:'IT',job_title:'Engineer',privileged:false}};
+const observed=[{key:'package',value:'gateway-runtime'}];
 const createSetup=options=>{
  const evidenceRepository=createEvidenceRepository();evidenceRepository.add(evidence('E1'));evidenceRepository.add(evidence('E2'));
  const findings=createFindingRepository({evidenceRepository,queueRules:{'VUL-1':'vulnerability-review','GEN-1':'general-review'},...options});
  return {evidenceRepository,findings};
 };
-const vulnerability={finding_id:'F-1',rule_id:'VUL-1',finding_type:'vulnerability',title:'Gateway package observation',control_refs:['C-1'],evidence_id:'E1',created_at:'2026-09-01T00:00:00Z',severity_input:ssvc(),agent_id:'vuln'};
+const vulnerability={finding_id:'F-1',rule_id:'VUL-1',finding_type:'vulnerability',title:'Gateway package observation',subject:assetSubject,evidence_lines:observed,control_refs:['C-1'],evidence_id:'E1',created_at:'2026-09-01T00:00:00Z',severity_input:ssvc(),agent_id:'vuln'};
 const human=(occurred_at='2026-09-02T00:00:00Z')=>({actor_id:'reviewer-1',occurred_at,reason:'Reviewed evidence'});
 const agent=(occurred_at='2026-09-02T00:00:00Z')=>({agent_id:'vuln',occurred_at,reason:'Additional observation'});
 
@@ -29,12 +34,16 @@ test('finding enums and initial projection come only from the ordered event log'
  assert.deepEqual(Object.values(FindingDisposition),['remediated','false_positive','risk_accepted','duplicate','reopened']);
  assert.deepEqual(Object.values(FindingEventType),['identified','evidence_linked','owner_assigned','severity_changed','action_linked','disposition']);
  assert.deepEqual(Object.values(FindingActorType),['agent','person','system']);
+ assert.deepEqual(Object.values(FindingSubjectType),['user','asset']);
  assert.deepEqual(Object.values(Severity),['low','medium','high','critical']);
  assert.equal(record.current_state,'open');assert.deepEqual(record.owner,{type:'queue',id:'vulnerability-review'});
  assert.equal(record.severity,'critical');assert.equal(record.remediate_by,'2026-09-08T00:00:00.000Z');
  assert.deepEqual(record.events.map(event=>event.type),['identified','owner_assigned']);
  assert.deepEqual(record.events.map(event=>event.event_id),[1,2]);
+ assert.deepEqual(record.subject,assetSubject);assert.deepEqual(record.evidence_lines,observed);
+ assert.deepEqual(record.events[0].subject,assetSubject);assert.deepEqual(record.events[0].evidence_lines,observed);
  assert.throws(()=>{record.events.push({});},TypeError);assert.throws(()=>{record.owner.id='changed';},TypeError);
+ assert.throws(()=>{record.subject.label='changed';},TypeError);assert.throws(()=>{record.evidence_lines[0].value='changed';},TypeError);
 });
 
 test('vulnerability severity policy pins the SSVC tree, decision points and mapping version',()=>{
@@ -50,10 +59,29 @@ test('vulnerabilities use SSVC exclusively and other findings use the risk matri
  const {findings}=createSetup();
  assert.throws(()=>findings.agent.identify({...vulnerability,severity_input:matrix()}),/SSVC inputs exclusively/);
  assert.throws(()=>findings.agent.identify({...vulnerability,severity_input:{...ssvc(),risk_matrix:{likelihood:'high',impact:'high'}}}),/cannot both appear/);
- const general={...vulnerability,finding_id:'F-2',rule_id:'GEN-1',finding_type:'identity',severity_input:matrix('high','medium',['regulated_data']),agent_id:'identity'};
+ const general={...vulnerability,finding_id:'F-2',rule_id:'GEN-1',finding_type:'identity',subject:userSubject,evidence_lines:[{key:'group',value:'ROLE-IT'}],severity_input:matrix('high','medium',['regulated_data']),agent_id:'identity'};
  const record=findings.agent.identify(general);assert.equal(record.severity,'critical');
  assert.throws(()=>findings.agent.identify({...general,finding_id:'F-3',severity_input:ssvc()}),/risk matrix inputs exclusively/);
  assert.throws(()=>findings.agent.identify({...general,finding_id:'F-4',severity_input:{...matrix(),ssvc:ssvc().ssvc}}),/cannot both appear/);
+});
+
+test('subjects are required and only identity-user and vulnerability-asset mappings exist',()=>{
+ const {findings}=createSetup();
+ assert.throws(()=>findings.agent.identify({...vulnerability,subject:undefined}),/Invalid subject/);
+ assert.throws(()=>findings.agent.identify({...vulnerability,subject:userSubject}),/Subject type user is not defined for finding_type vulnerability/);
+ const agents={incident:'soc',compliance:'compliance',configuration:'engineering',other:'soc'};
+ for(const [finding_type,agent_id] of Object.entries(agents))assert.throws(()=>findings.agent.identify({...vulnerability,finding_id:'F-'+finding_type,rule_id:'GEN-1',finding_type,subject:assetSubject,severity_input:matrix(),agent_id}),new RegExp('Subject mapping is undefined for finding_type '+finding_type));
+});
+
+test('evidence lines are structured rule facts and cannot duplicate subject identity attributes',()=>{
+ const {findings}=createSetup();
+ assert.throws(()=>findings.agent.identify({...vulnerability,evidence_lines:undefined}),/evidence_lines required/);
+ assert.throws(()=>findings.agent.identify({...vulnerability,evidence_lines:[]}),/evidence_lines required/);
+ assert.throws(()=>findings.agent.identify({...vulnerability,evidence_lines:['package=gateway-runtime']}),/Invalid evidence line/);
+ const identity={...vulnerability,finding_id:'F-2',rule_id:'GEN-1',finding_type:'identity',subject:userSubject,severity_input:matrix(),agent_id:'identity'};
+ assert.throws(()=>findings.agent.identify({...identity,evidence_lines:[{key:'job_title',value:'Engineer'}]}),/duplicates a subject identity attribute/);
+ assert.throws(()=>findings.agent.identify({...identity,evidence_lines:[{key:'owning_department',value:'IT'}]}),/Invalid identity evidence line key/);
+ assert.doesNotThrow(()=>findings.agent.identify({...identity,evidence_lines:[{key:'account_enabled',value:false},{key:'group',value:'ROLE-IT'}]}));
 });
 
 test('every repository projection and indicator calculation requires an explicit as_of',()=>{
@@ -144,6 +172,15 @@ test('supersede appends a replacement and retains the original event byte-identi
  assert.equal(after.severity,'medium');assert.equal(after.events.length,4);
 });
 
+test('subject and structured evidence facts change only through human supersede',()=>{
+ const {findings}=createSetup(),initial=findings.agent.identify(vulnerability),originalBytes=JSON.stringify(initial.events[0]);
+ assert.equal(findings.agent.changeSubject,undefined);assert.equal(findings.review.changeSubject,undefined);
+ const replacementSubject={...assetSubject,id:{...assetSubject.id,value:'gateway-2'},label:'Replacement gateway'};
+ const after=findings.review.supersede('F-1',1,{type:'identified',evidence_id:'E1',subject:replacementSubject,evidence_lines:[{key:'package',value:'replacement-runtime'}],severity_input:ssvc()},human());
+ assert.equal(JSON.stringify(after.events[0]),originalBytes);assert.deepEqual(after.subject,replacementSubject);
+ assert.deepEqual(after.evidence_lines,[{key:'package',value:'replacement-runtime'}]);assert.equal(after.events.at(-1).supersedes_event_id,1);
+});
+
 test('supersede rejects replacement attempts that inject event identity or actor metadata',()=>{
  const {findings}=createSetup();findings.agent.identify(vulnerability);
  findings.agent.changeSeverity('F-1',ssvc({exploitation:'none'}),agent());
@@ -181,7 +218,7 @@ test('a replacement event can itself be superseded in a human-recorded chain',()
 
 test('current evidence and action references both derive only from active events',()=>{
  const {findings}=createSetup();findings.agent.identify(vulnerability);
- findings.review.supersede('F-1',1,{type:'identified',evidence_id:'E2',severity_input:ssvc()},human());
+ findings.review.supersede('F-1',1,{type:'identified',evidence_id:'E2',subject:{...assetSubject,label:'Replacement gateway'},evidence_lines:[{key:'package',value:'replacement-runtime'}],severity_input:ssvc()},human());
  findings.agent.linkAction('F-1','ACT-OLD',agent('2026-09-03T00:00:00Z'));
  const record=findings.review.supersede('F-1',4,{type:'action_linked',action_id:'ACT-NEW'},human('2026-09-04T00:00:00Z'));
  assert.deepEqual(record.evidence_ids,['E2']);assert.deepEqual(record.action_refs,['ACT-NEW']);
@@ -245,31 +282,88 @@ test('dashboard indicators share one explicit as_of and are computed from reposi
 test('finding table projects repository records and sorts overdue before severity',()=>{
  const html=fs.readFileSync('src/index.html','utf8'),{findingRepo,as_of}=createDemoOverview();
  const ordered=sortOverviewFindings(findingRepo.agent.list(as_of));
- assert.deepEqual(ordered.map(finding=>finding.finding_id),['F-DEMO-CRITICAL','F-DEMO-HIGH','F-DEMO-MEDIUM','F-DEMO-CLOSED','F-DEMO-LOW']);
- assert.deepEqual(ordered.slice(0,3).map(finding=>finding.sla_status),['overdue','overdue','overdue']);
- for(const finding of ordered)for(const field of ['finding_id','title','severity','current_state','owner','sla_status'])assert.ok(finding[field]);
- assert.match(html,/<span>Finding<\/span><span>Title<\/span><span>Severity<\/span><span>State<\/span><span>Owner<\/span><span>SLA status<\/span>/);
+ assert.deepEqual(ordered.map(finding=>finding.finding_id),['IAM-0004','IAM-0006','IAM-0008','IAM-0009','IAM-0001','IAM-0002','IAM-0003','IAM-0005','IAM-0007','IAM-0010']);
+ assert.deepEqual(ordered.slice(0,4).map(finding=>finding.sla_status),['overdue','overdue','overdue','overdue']);
+ for(const finding of ordered)for(const field of ['finding_id','subject','evidence_lines','title','severity','current_state','owner','sla_status'])assert.ok(finding[field]);
+ assert.match(html,/<span>Finding<\/span><span>Subject<\/span><span>Title<\/span><span>Severity<\/span><span>State<\/span><span>Owner<\/span><span>SLA status<\/span>/);
  assert.match(html,/sortOverviewFindings\(findingRepo\.agent\.list\(overviewAsOf\)\)/);
  assert.match(html,/within_sla:'Within SLA'/);
- assert.match(html,/finding\.finding_id[\s\S]*finding\.title[\s\S]*finding\.severity[\s\S]*finding\.current_state[\s\S]*finding\.owner[\s\S]*finding\.sla_status/);
+ assert.match(html,/finding\.finding_id[\s\S]*finding\.subject\.label[\s\S]*finding\.title[\s\S]*finding\.severity[\s\S]*finding\.current_state[\s\S]*finding\.owner[\s\S]*finding\.sla_status/);
  assert.doesNotMatch(html,/INC-2841|VUL-9912|IAM-2204|<span>Assessment<\/span>|<span>Window<\/span>|Current window/);
 });
 
-test('dashboard demo findings cover every severity, closure, overdue state and expired acceptance',()=>{
- const {controlRepo,findingRepo,cycle,as_of}=createDemoOverview();
+test('dashboard findings use the verified Entra snapshot and expected real SLA behavior',()=>{
+ const {controlRepo,evidenceRepo,findingRepo,cycle,as_of,snapshot}=createDemoOverview();
  assert.equal(as_of,OVERVIEW_AS_OF);
  assert.equal(coverageStatement(coverage(controlRepo.agent.list(),cycle.cycle_id)),'5 controls in scope. 2 tested this cycle, 1 passed, 1 failed, 3 not yet tested.');
  assert.equal(controlRepo.agent.get('CTRL-01').status,'tested_pass');assert.equal(controlRepo.agent.get('CTRL-01').assessor,'Demo reviewer');
  assert.equal(controlRepo.agent.get('CTRL-04').status,'tested_fail');assert.equal(controlRepo.agent.get('CTRL-04').assessor,'Demo reviewer');
  assert.equal(controlRepo.agent.get('CTRL-02').status,'evidence_collected');
  const indicators=findingIndicators(findingRepo.agent.list(as_of),as_of);
- assert.deepEqual(indicators.open_findings_by_severity,{low:1,medium:1,high:1,critical:1});
- assert.deepEqual(indicators.overdue_findings_by_severity,{low:0,medium:1,high:1,critical:1});
- const expired=findingRepo.agent.get('F-DEMO-MEDIUM',as_of),closed=findingRepo.agent.get('F-DEMO-CLOSED',as_of);
- assert.equal(expired.disposition,'risk_accepted');assert.equal(expired.current_state,'open');
- assert.equal(closed.current_state,'closed');
- assert.deepEqual(findingRepo.agent.get('F-DEMO-CRITICAL',as_of).action_refs,['ACT-VUL-001','ACT-SE-001']);
- assert.deepEqual(findingRepo.agent.get('F-DEMO-HIGH',as_of).action_refs,['ACT-SOC-001']);
+ assert.deepEqual(indicators.open_findings_by_severity,{low:0,medium:6,high:3,critical:1});
+ assert.deepEqual(indicators.overdue_findings_by_severity,{low:0,medium:0,high:3,critical:1});
+ assert.deepEqual(evidenceRepo.get(ENTRA_SNAPSHOT.evidence_id),snapshot);
+ assert.deepEqual(findingRepo.agent.get('IAM-0008',as_of).action_refs,['ACT-ID-001']);
+ assert.deepEqual(findingRepo.agent.get('IAM-0004',as_of).action_refs,['ACT-ID-002']);
+});
+
+test('Entra finding seeds preserve supplied IDs, titles and NIST references while computing severity',()=>{
+ const source=JSON.parse(fs.readFileSync('findings.json','utf8')),{findingRepo,as_of}=createDemoOverview();
+ assert.equal(source.length,10);assert.equal(ENTRA_FINDING_SEEDS.length,10);
+ const sourceById=new Map(source.map(item=>[item.finding_id,item]));
+ for(const seed of ENTRA_FINDING_SEEDS){
+   const supplied=sourceById.get(seed.finding_id),projected=findingRepo.agent.get(seed.finding_id,as_of);
+   assert.ok(supplied);assert.equal(seed.title,supplied.title);assert.deepEqual(seed.control_refs,supplied.control_refs.nist_800_53);
+   assert.equal(seed.subject.label,supplied.subject.display_name);assert.equal(seed.subject.details.principal_name,supplied.subject.upn);
+   assert.equal(seed.subject.details.department,supplied.subject.department);assert.equal(seed.subject.details.job_title,supplied.subject.title);assert.equal(seed.subject.details.privileged,supplied.subject.privileged);
+   assert.equal(projected.severity,supplied.severity);assert.equal(projected.created_at,'2026-08-23T20:40:22Z');
+   assert.deepEqual(projected.evidence_ids,['ENTRA-SNAPSHOT-2026-08-23']);assert.equal(projected.finding_type,'identity');
+   assert.equal(Object.hasOwn(seed.severity_input,'modifiers'),false);
+ }
+ assert.deepEqual(ENTRA_QUEUE_RULES,{R01:'priority-review',R02:'standard-review',R03:'priority-review',R04:'standard-review',R05:'standard-review'});
+});
+
+test('Entra subjects use snapshot object IDs and keep identity attributes out of rule facts',()=>{
+ const rows=fs.readFileSync('snap.csv','utf8').split(/\r?\n/),header=rows[0].replace(/^\uFEFF?"|"$/g,'').split('\",\"');
+ const index=Object.fromEntries(header.map((name,position)=>[name,position])),idByUpn=new Map();
+ for(const row of rows.slice(1)){
+   if(!row)continue;
+   const values=row.replace(/^"|"$/g,'').split('\",\"');idByUpn.set(values[index.UserPrincipalName],values[index.UserId]);
+ }
+ for(const seed of ENTRA_FINDING_SEEDS){
+   assert.equal(seed.subject.type,'user');assert.equal(seed.subject.id.namespace,'microsoft_entra_id');
+   assert.equal(seed.subject.id.value,idByUpn.get(seed.subject.details.principal_name));
+   for(const line of seed.evidence_lines){assert.deepEqual(Object.keys(line),['key','value']);assert.doesNotMatch(line.key,/^(principal_name|department|job_title|privileged)$/);}
+ }
+ assert.deepEqual(ENTRA_FINDING_SEEDS.find(seed=>seed.finding_id==='IAM-0002').subject.label,'Bea Lindqvist');
+ assert.deepEqual(ENTRA_FINDING_SEEDS.find(seed=>seed.finding_id==='IAM-0010').subject.label,'Tomas Njoku');
+ assert.deepEqual(ENTRA_FINDING_SEEDS.find(seed=>seed.finding_id==='IAM-0008').evidence_lines,[{key:'account_enabled',value:false},{key:'group',value:'DEPT-Store-Operations'},{key:'group',value:'ROLE-Store-Associate'}]);
+});
+
+test('finding drawer renders subject identity and structured evidence keys and values separately',()=>{
+ const html=fs.readFileSync('src/index.html','utf8');
+ for(const id of ['finding-subject','finding-subject-type','finding-subject-id','finding-subject-namespace','subject-details','finding-evidence-lines'])assert.match(html,new RegExp('id="'+id+'"'));
+ assert.match(html,/finding\.evidence_lines\.map\(line=>[\s\S]*line\.key[\s\S]*line\.value/);
+});
+
+test('Entra snapshot evidence records the supplied artifact hash byte-for-byte',()=>{
+ const actual=crypto.createHash('sha256').update(fs.readFileSync('snap.csv')).digest('hex');
+ assert.equal(actual,ENTRA_SNAPSHOT.artifact_ref.content_hash.value);
+ assert.equal(ENTRA_SNAPSHOT.collected_at,'2026-08-23T20:40:22Z');
+ assert.equal(ENTRA_SNAPSHOT.source,'Microsoft Entra ID');
+ assert.deepEqual(ENTRA_SNAPSHOT.collected_by,{type:'agent',id:'identity'});
+ assert.equal(ENTRA_SNAPSHOT.artifact_ref.verification_status,'unverified');
+});
+
+test('finding provenance is rendered from the shared evidence record',()=>{
+ const html=fs.readFileSync('src/index.html','utf8');
+ assert.match(html,/id="finding-provenance"/);
+ assert.match(html,/snapshot\.collected_at/);assert.match(html,/snapshot\.artifact_ref\.content_hash\.value/);
+ assert.match(html,/SHA-256 '.*hash\.slice\(0,12\).*hash\.slice\(-8\)/s);
+ assert.doesNotMatch(html,/F-DEMO|FINDING-DEMO/);
+ assert.doesNotMatch(html,/ACT-SOC-001|ACT-VUL-001|ACT-SE-001|user:demo-(?:admin|standard|dormant)/);
+ assert.match(html,/ACT-ID-001[\s\S]*user:rmalik@contoso\.onmicrosoft\.com[\s\S]*R04/);
+ assert.match(html,/ACT-ID-002[\s\S]*user:dreyes@contoso\.onmicrosoft\.com[\s\S]*R01/);
 });
 
 test('dashboard prominence ranks not_assessed above overdue and overdue above open',()=>{

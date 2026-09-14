@@ -1,6 +1,7 @@
 import {createControlRepository} from './control-model.mjs';
 import {createEvidenceRepository} from './evidence-model.mjs';
 import {createFindingRepository} from './finding-model.mjs';
+import {ENTRA_FINDING_SEEDS,ENTRA_QUEUE_RULES,ENTRA_SNAPSHOT} from './entra-finding-seeds.mjs';
 
 export const OVERVIEW_AS_OF='2026-09-14T23:00:00Z';
 export const OVERVIEW_CYCLE=Object.freeze({cycle_id:'2026-09',cycle_start:'2026-09-01T00:00:00Z',cycle_end:'2026-10-01T00:00:00Z'});
@@ -31,28 +32,14 @@ export function createDemoOverview(){
   });
   controlRepo.reviewer.assess('CTRL-01','tested_pass',{assessor:'Demo reviewer',assessed_at:'2026-09-14T12:00:00Z',assessment_rationale:'Human-recorded demo test result'});
   controlRepo.reviewer.assess('CTRL-04','tested_fail',{assessor:'Demo reviewer',assessed_at:'2026-09-14T12:00:00Z',assessment_rationale:'Human-recorded demo test result'});
-  evidenceRepo.add({
-    evidence_id:'FINDING-DEMO-E1',source:'Demo inventory',collected_by:{type:'agent',id:'vuln'},collected_at:'2026-08-01T00:00:00Z',
-    artifact_ref:{type:'export',locator:'artifact://session/demo/finding-inventory',content_hash:{algorithm:'sha256',value:'c'.repeat(64)}}
-  });
+  evidenceRepo.add(ENTRA_SNAPSHOT);
   const findingRepo=createFindingRepository({
     evidenceRepository:evidenceRepo,controlRepository:controlRepo,
-    queueRules:{'DEMO-CRITICAL':'priority-review','DEMO-HIGH':'standard-review','DEMO-MEDIUM':'standard-review','DEMO-LOW':'standard-review','DEMO-CLOSED':'standard-review'}
+    queueRules:ENTRA_QUEUE_RULES
   });
-  const ssvc=(exploitation,automatable,technical_impact,mission_prevalence,public_wellbeing_impact)=>({ssvc:{exploitation,automatable,technical_impact,mission_prevalence,public_wellbeing_impact},modifiers:[]});
-  const findingSeeds=[
-    {finding_id:'F-DEMO-CRITICAL',rule_id:'DEMO-CRITICAL',finding_type:'vulnerability',title:'Critical-priority demo observation',control_refs:['CTRL-02'],evidence_id:'FINDING-DEMO-E1',created_at:'2026-09-01T00:00:00Z',severity_input:ssvc('active','yes','total','essential','material'),agent_id:'vuln'},
-    {finding_id:'F-DEMO-HIGH',rule_id:'DEMO-HIGH',finding_type:'vulnerability',title:'High-priority demo observation',control_refs:['CTRL-02'],evidence_id:'FINDING-DEMO-E1',created_at:'2026-08-20T00:00:00Z',severity_input:ssvc('active','no','total','support','material'),agent_id:'vuln'},
-    {finding_id:'F-DEMO-MEDIUM',rule_id:'DEMO-MEDIUM',finding_type:'vulnerability',title:'Expired acceptance demo observation',control_refs:['CTRL-02'],evidence_id:'FINDING-DEMO-E1',created_at:'2026-08-01T01:00:00Z',severity_input:ssvc('poc','no','total','support','minimal'),agent_id:'vuln'},
-    {finding_id:'F-DEMO-LOW',rule_id:'DEMO-LOW',finding_type:'vulnerability',title:'Low-priority demo observation',control_refs:['CTRL-02'],evidence_id:'FINDING-DEMO-E1',created_at:'2026-09-01T00:00:00Z',severity_input:ssvc('none','no','partial','minimal','minimal'),agent_id:'vuln'},
-    {finding_id:'F-DEMO-CLOSED',rule_id:'DEMO-CLOSED',finding_type:'identity',title:'Human-closed demo observation',control_refs:['CTRL-03'],evidence_id:'FINDING-DEMO-E1',created_at:'2026-09-01T00:00:00Z',severity_input:{risk_matrix:{likelihood:'high',impact:'medium'},modifiers:[]},agent_id:'identity'}
-  ];
-  for(const seed of findingSeeds)findingRepo.agent.identify(seed);
-  findingRepo.review.dispose('F-DEMO-MEDIUM','risk_accepted',{acceptance_expires_at:'2026-09-10T00:00:00Z'},{actor_id:'demo-reviewer',occurred_at:'2026-08-02T00:00:00Z',reason:'Time-limited demo acceptance'});
-  findingRepo.review.dispose('F-DEMO-CLOSED','remediated',{},{actor_id:'demo-reviewer',occurred_at:'2026-09-02T00:00:00Z',reason:'Human-recorded demo disposition'});
+  for(const seed of ENTRA_FINDING_SEEDS)findingRepo.agent.identify(seed);
   for(const [finding_id,action_id,agent_id] of [
-    ['F-DEMO-CRITICAL','ACT-VUL-001','vuln'],['F-DEMO-CRITICAL','ACT-SE-001','engineering'],
-    ['F-DEMO-HIGH','ACT-SOC-001','soc'],['F-DEMO-MEDIUM','ACT-ID-001','identity']
-  ])findingRepo.agent.linkAction(finding_id,action_id,{agent_id,occurred_at:'2026-09-13T20:30:00Z',reason:'Demo proposal linked to finding'});
-  return Object.freeze({evidenceRepo,controlRepo,findingRepo,cycle:OVERVIEW_CYCLE,as_of:OVERVIEW_AS_OF});
+    ['IAM-0008','ACT-ID-001','identity'],['IAM-0004','ACT-ID-002','identity']
+  ])findingRepo.agent.linkAction(finding_id,action_id,{agent_id,occurred_at:'2026-09-13T20:30:00Z',reason:'Identity proposal linked to finding'});
+  return Object.freeze({evidenceRepo,controlRepo,findingRepo,cycle:OVERVIEW_CYCLE,as_of:OVERVIEW_AS_OF,snapshot:ENTRA_SNAPSHOT});
 }

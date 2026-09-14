@@ -13,6 +13,7 @@ export const FindingEventType=Object.freeze({
 });
 export const FindingActorType=Object.freeze({agent:'agent',person:'person',system:'system'});
 export const FindingOwnerType=Object.freeze({queue:'queue',person:'person'});
+export const FindingSubjectType=Object.freeze({user:'user',asset:'asset'});
 export const Severity=Object.freeze({low:'low',medium:'medium',high:'high',critical:'critical'});
 
 const severityOrder=Object.freeze(['low','medium','high','critical']);
@@ -176,12 +177,49 @@ const validateOwner=owner=>{
   if(!owner||Object.keys(owner).some(key=>!['type','id'].includes(key))||!Object.values(FindingOwnerType).includes(owner.type))throw Error('Invalid owner');
   return {type:owner.type,id:required(owner.id,'owner.id')};
 };
+const subjectTypeFor=Object.freeze({identity:FindingSubjectType.user,vulnerability:FindingSubjectType.asset});
+const validateSubject=(findingType,value)=>{
+  const expected=subjectTypeFor[findingType];
+  if(!expected)throw Error('Subject mapping is undefined for finding_type '+findingType);
+  if(!value||typeof value!=='object'||Array.isArray(value)||Object.keys(value).some(key=>!['type','id','label','details'].includes(key)))throw Error('Invalid subject');
+  if(value.type!==expected)throw Error('Subject type '+String(value.type)+' is not defined for finding_type '+findingType);
+  if(!value.id||typeof value.id!=='object'||Array.isArray(value.id)||Object.keys(value.id).some(key=>!['namespace','value'].includes(key)))throw Error('Invalid subject identifier');
+  const subject={type:expected,id:{namespace:required(value.id.namespace,'subject.id.namespace'),value:required(value.id.value,'subject.id.value')},label:required(value.label,'subject.label')};
+  if(value.details!==undefined){
+    if(!value.details||typeof value.details!=='object'||Array.isArray(value.details))throw Error('Invalid subject details');
+    if(expected===FindingSubjectType.user){
+      const fields=['principal_name','department','job_title','privileged'];
+      if(Object.keys(value.details).some(key=>!fields.includes(key))||fields.some(key=>!Object.hasOwn(value.details,key)))throw Error('Invalid user subject details');
+      subject.details={principal_name:required(value.details.principal_name,'subject.details.principal_name'),department:required(value.details.department,'subject.details.department'),job_title:required(value.details.job_title,'subject.details.job_title'),privileged:value.details.privileged};
+      if(typeof subject.details.privileged!=='boolean')throw Error('subject.details.privileged must be boolean');
+    }else{
+      if(Object.keys(value.details).length)throw Error('Asset subject details are undefined');
+      subject.details={};
+    }
+  }else if(expected===FindingSubjectType.user)throw Error('User subject details are required');
+  return subject;
+};
+const identityFactKeys=new Set(['expected_group','assigned_roles','group','account_enabled']);
+const subjectDetailKeys=new Set(['principal_name','department','job_title','privileged']);
+const validateEvidenceLines=(findingType,value)=>{
+  if(!Array.isArray(value)||!value.length)throw Error('evidence_lines required');
+  return value.map(line=>{
+    if(!line||typeof line!=='object'||Array.isArray(line)||Object.keys(line).some(key=>!['key','value'].includes(key)))throw Error('Invalid evidence line');
+    const key=required(line.key,'evidence_line.key');
+    if(!/^[a-z][a-z0-9_]*$/.test(key))throw Error('Invalid evidence line key');
+    if(subjectDetailKeys.has(key))throw Error('Evidence line duplicates a subject identity attribute');
+    if(findingType==='identity'&&!identityFactKeys.has(key))throw Error('Invalid identity evidence line key');
+    if(typeof line.value!=='string'&&typeof line.value!=='boolean'&&typeof line.value!=='number')throw Error('Invalid evidence line value');
+    if(typeof line.value==='string'&&!line.value.trim())throw Error('evidence_line.value is required');
+    return {key,value:line.value};
+  });
+};
 const addDays=(timestamp,days)=>new Date(Date.parse(timestamp)+days*86400000).toISOString();
 
 class Finding{
   #record;#evidenceRepository;#controlRepository;#queueRules;
   constructor(input,context){
-    const allowed=['finding_id','rule_id','finding_type','title','control_refs','evidence_id','created_at','severity_input','agent_id'];
+    const allowed=['finding_id','rule_id','finding_type','title','subject','evidence_lines','control_refs','evidence_id','created_at','severity_input','agent_id'];
     if(!input||Object.keys(input).some(key=>!allowed.includes(key)))throw Error('Unexpected finding field');
     const finding_id=required(input.finding_id,'finding_id'),rule_id=required(input.rule_id,'rule_id'),finding_type=required(input.finding_type,'finding_type');
     if(!Object.values(FindingType).includes(finding_type))throw Error('Invalid finding_type');
@@ -192,7 +230,7 @@ class Finding{
     const control_refs=stringList(input.control_refs,'control_refs');
     const severity=computeSeverity(finding_type,input.severity_input,severityPolicy,{evidenceRepository:context.evidenceRepository,controlRepository:context.controlRepository,findingControlRefs:control_refs,occurredAt:created_at});
     this.#evidenceRepository=context.evidenceRepository;this.#controlRepository=context.controlRepository;this.#queueRules=context.queueRules;
-    const identified={event_id:1,type:'identified',actor:actor('agent',input.agent_id),occurred_at:created_at,reason:'Finding identified',supersedes_event_id:null,evidence_id,severity};
+    const identified={event_id:1,type:'identified',actor:actor('agent',input.agent_id),occurred_at:created_at,reason:'Finding identified',supersedes_event_id:null,evidence_id,subject:validateSubject(finding_type,input.subject),evidence_lines:validateEvidenceLines(finding_type,input.evidence_lines),severity};
     const queue=this.#queueRules[rule_id];if(!queue)throw Error('Rule-defined queue assignment required');
     const assigned={event_id:2,type:'owner_assigned',actor:actor('system','rule-queue-assignment'),occurred_at:created_at,reason:'Rule-defined queue assignment',supersedes_event_id:null,owner:{type:'queue',id:queue}};
     this.#record=immutable({finding_id,rule_id,finding_type,title:required(input.title,'title'),control_refs,created_at,severity_policy:severityPolicy,sla_policy:slaPolicy,events:[identified,assigned]});
@@ -242,14 +280,14 @@ class Finding{
     const original=this.#record.events.find(event=>event.event_id===event_id);if(!original)throw Error('Unknown finding event');
     if(this.#record.events.some(event=>event.supersedes_event_id===event_id))throw Error('Finding event already superseded');
     if(!replacement||replacement.type!==original.type)throw Error('Replacement event type must match');
-    const allowed={identified:['type','evidence_id','severity_input'],evidence_linked:['type','evidence_id'],owner_assigned:['type','owner'],severity_changed:['type','severity_input'],action_linked:['type','action_id'],disposition:['type','disposition','acceptance_expires_at','canonical_finding_id']}[original.type];
+    const allowed={identified:['type','evidence_id','subject','evidence_lines','severity_input'],evidence_linked:['type','evidence_id'],owner_assigned:['type','owner'],severity_changed:['type','severity_input'],action_linked:['type','action_id'],disposition:['type','disposition','acceptance_expires_at','canonical_finding_id']}[original.type];
     if(Object.keys(replacement).some(key=>!allowed.includes(key)))throw Error('Unexpected replacement event field');
     let payload;
     if(original.type==='evidence_linked'){
       const evidence_id=required(replacement.evidence_id,'evidence_id');this.#evidenceRepository.get(evidence_id);payload={evidence_id};
     }else if(original.type==='identified'){
       const evidence_id=required(replacement.evidence_id,'evidence_id');this.#evidenceRepository.get(evidence_id);
-      payload={evidence_id,severity:computeSeverity(this.#record.finding_type,replacement.severity_input,this.#record.severity_policy,{capability,evidenceRepository:this.#evidenceRepository,controlRepository:this.#controlRepository,findingControlRefs:this.#record.control_refs,occurredAt:metadata.occurred_at})};
+      payload={evidence_id,subject:validateSubject(this.#record.finding_type,replacement.subject),evidence_lines:validateEvidenceLines(this.#record.finding_type,replacement.evidence_lines),severity:computeSeverity(this.#record.finding_type,replacement.severity_input,this.#record.severity_policy,{capability,evidenceRepository:this.#evidenceRepository,controlRepository:this.#controlRepository,findingControlRefs:this.#record.control_refs,occurredAt:metadata.occurred_at})};
     }else if(original.type==='owner_assigned')payload={owner:validateOwner(replacement.owner)};
     else if(original.type==='severity_changed')payload={severity:computeSeverity(this.#record.finding_type,replacement.severity_input,this.#record.severity_policy,{capability,evidenceRepository:this.#evidenceRepository,controlRepository:this.#controlRepository,findingControlRefs:this.#record.control_refs,occurredAt:metadata.occurred_at})};
     else if(original.type==='action_linked')payload={action_id:required(replacement.action_id,'action_id')};
@@ -273,7 +311,7 @@ class Finding{
     const superseded=new Set(visible.map(event=>event.supersedes_event_id).filter(id=>id!==null));
     const active=visible.filter(event=>!superseded.has(event.event_id));
     const last=type=>active.filter(event=>event.type===type).at(-1)||null;
-    const severityEvent=active.filter(event=>event.type==='identified'||event.type==='severity_changed').at(-1);
+    const identifiedEvent=last('identified'),severityEvent=active.filter(event=>event.type==='identified'||event.type==='severity_changed').at(-1);
     const ownerEvent=last('owner_assigned'),dispositionEvent=last('disposition');
     let state=FindingState.open,disposition=null;
     if(dispositionEvent){
@@ -288,7 +326,7 @@ class Finding{
     const action_refs=[...new Set(active.filter(event=>event.type==='action_linked').map(event=>event.action_id))];
     return immutable({...this.#record,events:visible,as_of,current_state:state,owner:ownerEvent?.owner??null,severity,remediate_by,
       disposition,acceptance_expires_at:dispositionEvent?.acceptance_expires_at??null,canonical_finding_id:dispositionEvent?.canonical_finding_id??null,
-      evidence_ids,action_refs,
+      subject:identifiedEvent.subject,evidence_lines:identifiedEvent.evidence_lines,evidence_ids,action_refs,
       sla_status:state==='open'&&Date.parse(as_of)>Date.parse(remediate_by)?'overdue':state==='open'?'within_sla':'closed'
     });
   }

@@ -118,12 +118,17 @@
     .chip { border:1px solid var(--line); background:var(--panel-2); color:#b4c7c2; border-radius:6px; padding:6px 7px; font:600 .61rem ui-monospace,monospace; }
     .snapshot-time { margin:14px 0 2px; color:var(--quiet); font:700 .68rem ui-monospace,monospace; }
     .cases-panel { margin-top:18px; overflow:hidden; }
-    .case-row { display:grid; grid-template-columns:125px minmax(220px,1.5fr) 85px 75px 150px 95px; gap:14px; align-items:center; border-bottom:1px solid var(--line); padding:13px 18px; cursor:pointer; }
+    .case-row { display:grid; grid-template-columns:105px 125px minmax(190px,1.5fr) 78px 70px 138px 90px; gap:12px; align-items:center; border-bottom:1px solid var(--line); padding:13px 18px; cursor:pointer; }
     .case-row:last-child { border-bottom:0; }
     .case-row:not(.case-header):hover { background:rgba(255,255,255,.022); }
     .case-header { color:var(--quiet); font:700 .62rem ui-monospace,monospace; text-transform:uppercase; letter-spacing:.06em; cursor:default; padding-top:10px; padding-bottom:10px; }
     .case-id { color:var(--muted); font:700 .68rem ui-monospace,monospace; }
     .case-title { font-weight:750; font-size:.78rem; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .case-subject { font-weight:700; font-size:.74rem; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .fact-list { display:grid; gap:7px; margin:0; }
+    .fact-row { display:grid; grid-template-columns:minmax(120px,.45fr) minmax(180px,1fr); gap:12px; padding:8px 10px; border:1px solid var(--line); border-radius:7px; }
+    .fact-row dt { color:var(--quiet); font:700 .66rem ui-monospace,monospace; }
+    .fact-row dd { margin:0; color:var(--text); overflow-wrap:anywhere; }
     .severity { display:inline-flex; align-items:center; gap:6px; font:700 .66rem ui-monospace,monospace; text-transform:uppercase; }
     .severity::before { content:""; width:6px; height:6px; border-radius:50%; background:currentColor; }
     .severity.critical{color:var(--red)} .severity.high{color:var(--amber)} .severity.medium{color:var(--cyan)}
@@ -289,8 +294,8 @@
       </section>
 
       <section class="panel cases-panel" id="cases" aria-labelledby="cases-title">
-        <div class="panel-head"><h3 id="cases-title">Finding records</h3><span>Projected at the shared snapshot</span></div>
-        <div class="case-row case-header"><span>Finding</span><span>Title</span><span>Severity</span><span>State</span><span>Owner</span><span>SLA status</span></div>
+        <div class="panel-head"><h3 id="cases-title">Finding records</h3><span id="finding-provenance"></span></div>
+        <div class="case-row case-header"><span>Finding</span><span>Subject</span><span>Title</span><span>Severity</span><span>State</span><span>Owner</span><span>SLA status</span></div>
         <div id="finding-list"></div>
       </section>
 
@@ -305,6 +310,9 @@
     <div class="drawer-head"><div><div class="eyebrow" id="dialog-id">Finding record</div><h2 id="dialog-title">Finding details</h2></div><button class="close" aria-label="Close finding">×</button></div>
     <div class="drawer-body">
       <div class="verdict"><div><strong id="verdict-title">Finding state</strong><p id="verdict-copy">Severity and SLA status at the shared snapshot.</p></div></div>
+      <div class="audit-grid"><div class="audit"><small>Subject</small><span id="finding-subject"></span></div><div class="audit"><small>Subject type</small><span id="finding-subject-type"></span></div><div class="audit"><small>Stable identifier</small><span id="finding-subject-id"></span></div><div class="audit"><small>Identifier namespace</small><span id="finding-subject-namespace"></span></div></div>
+      <div class="detail-section"><h3>Subject attributes</h3><dl class="fact-list" id="subject-details"></dl></div>
+      <div class="detail-section"><h3>Observed facts</h3><dl class="fact-list" id="finding-evidence-lines"></dl></div>
       <div class="evidence" id="evidence-list"></div>
       <div class="audit-grid"><div class="audit"><small>Rule</small><span id="audit-rule"></span></div><div class="audit"><small>Owner</small><span id="audit-owner"></span></div><div class="audit"><small>Remediate by</small><span id="audit-deadline"></span></div><div class="audit"><small>Snapshot</small><span id="audit-snapshot"></span></div></div>
     </div>
@@ -380,6 +388,10 @@
       document.querySelector('#dialog-id').textContent=finding.finding_id+' · '+finding.rule_id;document.querySelector('#dialog-title').textContent=finding.title;
       document.querySelector('#verdict-title').textContent=finding.current_state==='open'?'Open finding':'Closed finding';
       document.querySelector('#verdict-copy').textContent='Severity: '+finding.severity+' · SLA: '+slaLabels[finding.sla_status];
+      document.querySelector('#finding-subject').textContent=finding.subject.label;document.querySelector('#finding-subject-type').textContent=titleCase(finding.subject.type);
+      document.querySelector('#finding-subject-id').textContent=finding.subject.id.value;document.querySelector('#finding-subject-namespace').textContent=finding.subject.id.namespace;
+      document.querySelector('#subject-details').innerHTML=Object.entries(finding.subject.details??{}).map(([key,value])=>'<div class="fact-row"><dt>'+esc(titleCase(key))+'</dt><dd>'+esc(value)+'</dd></div>').join('');
+      document.querySelector('#finding-evidence-lines').innerHTML=finding.evidence_lines.map(line=>'<div class="fact-row"><dt>'+esc(titleCase(line.key))+'</dt><dd>'+esc(line.value)+'</dd></div>').join('');
       document.querySelector('#audit-rule').textContent=finding.rule_id;document.querySelector('#audit-owner').textContent=owner;
       document.querySelector('#audit-deadline').textContent=finding.remediate_by;document.querySelector('#audit-snapshot').textContent=finding.as_of;
       document.querySelector('#evidence-list').innerHTML=finding.evidence_ids.map(id=>{
@@ -401,23 +413,18 @@
 
     const {agent:agentPort, review:humanReview}=createActionRepository();
     const seeds=[
-      ['ACT-SOC-001','soc','Proposed identity containment','user:demo-admin','Collected sign-in and download records during September 2026 UTC.','IAM-IR-004',['NIST SP 800-61r3','T1078'],'critical','Human recovery: verify identity, restore access under a separate approved procedure.'],
-      ['ACT-ID-001','identity','Proposed session revocation','user:demo-standard','Observed authentication records · September 2026 UTC.','IAM-IR-004',['NIST SP 800-63-4'],'high','Sessions cannot be restored; human-managed reauthentication required.'],
-      ['ACT-VUL-001','vuln','Recommended patch review','gateway:demo-edge','Collected exposure and KEV records; pending review.','VUL-SLA-001',['CISA KEV','NIST SP 800-40'],'critical','Human recovery: restore a verified snapshot and validate service health.'],
+      ['ACT-ID-001','identity','Proposed session revocation','user:rmalik@contoso.onmicrosoft.com','The Entra entitlement export shows that this disabled account retains group entitlements.','R04',['AC-2(1)','AC-2(4)'],'high','Sessions cannot be restored; human-managed reauthentication required.'],
       ['ACT-CO-001','compliance','Proposed evidence review','control:SOC2-CC6.1','Collected evidence for control criteria.','GRC-REVIEW-001',['SOC 2 CC6.1'],'medium','Retain prior evidence and version history; human reviewer may supersede the record.'],
-      ['ACT-SE-001','engineering','Proposed detection change','rule:CR-118','Collected detection records; pending review.','ENG-CHANGE-001',['T1078','NIST SSDF'],'high','Human recovery: restore the prior rule version and validate detection coverage.'],
-      ['ACT-ID-002','identity','Proposed access review','user:demo-dormant','Observed account activity and entitlement records; pending review.','IAM-LP-007',['CIS Control 6'],'medium','Human recovery: restore the recorded entitlement only after separate approval.']
+      ['ACT-ID-002','identity','Proposed entitlement removal','user:dreyes@contoso.onmicrosoft.com','The Entra entitlement export shows a Store Operations user holding the privileged ROLE-IT-SysAdmin role.','R01',['AC-6','AC-6(1)'],'critical','Human recovery: restore the recorded entitlement only after separate approval.']
     ];
     for(const [action_id,agent_id,action_type,target,justification,rule_id,control_refs,severity,rollback_procedure] of seeds){
       agentPort.propose({action_id,agent_id,action_type,target,justification,rule_id,control_refs,severity,rollback_procedure,proposed_at:'2026-09-13T20:00:00Z'});
       agentPort.submit(action_id);
     }
     const feed=[
-      ['ACT-SOC-001','SOC Agent prepared a response proposal','Sign-in and download evidence is ready for human review.'],
-      ['ACT-ID-001','Identity Agent prepared an access proposal','Authentication evidence is ready for a decision under IAM-IR-004.'],
-      ['ACT-VUL-001','Vulnerability Agent prioritized an exposure','Exposure and KEV evidence is ready for human review.'],
-      ['ACT-CO-001','Compliance Agent prepared a control record','SOC 2 CC6.1 evidence is ready for human assessment.'],
-      ['ACT-SE-001','Engineering Agent drafted a detection change','The Sentinel rule proposal and ATT&CK mapping are ready for approval.']
+      ['ACT-ID-001','Identity Agent prepared a session proposal','The disabled-account entitlement finding is ready for human review.'],
+      ['ACT-ID-002','Identity Agent prepared an entitlement proposal','The cross-department privileged-role finding is ready for human review.'],
+      ['ACT-CO-001','Compliance Agent prepared a control record','SOC 2 CC6.1 evidence is ready for human assessment.']
     ];
     const actionStatusLabels={
       proposed:'Draft proposal',
@@ -494,7 +501,7 @@
       try{humanReview.expire(selectedAction);refresh();notify('Action expired. No external action performed.');}catch(e){notify(e.message);}
     });
 
-    const {evidenceRepo,controlRepo,findingRepo,cycle}=createDemoOverview();
+    const {evidenceRepo,controlRepo,findingRepo,cycle,snapshot}=createDemoOverview();
     const controlDialog=document.querySelector('#control-dialog');let selectedControl;
     const labels={not_assessed:'Not assessed',evidence_collected:'Evidence collected · pending review',tested_pass:'Tested pass',tested_fail:'Tested fail',exception_approved:'Exception approved'};
     const severityBands=Object.values(Severity).reverse();
@@ -513,9 +520,11 @@
     const ownerLabel=owner=>owner?titleCase(owner.type)+': '+owner.id:'Unassigned';
     function renderFindings(){
       const findings=sortOverviewFindings(findingRepo.agent.list(overviewAsOf));
+      const hash=snapshot.artifact_ref.content_hash.value;
+      document.querySelector('#finding-provenance').textContent='Entra export '+snapshot.collected_at+' · SHA-256 '+hash.slice(0,12)+'…'+hash.slice(-8);
       document.querySelector('#finding-list').innerHTML=findings.map(finding=>
         '<div class="case-row" role="button" tabindex="0" data-finding-id="'+esc(finding.finding_id)+'">'+
-          '<span class="case-id">'+esc(finding.finding_id)+'</span><span class="case-title">'+esc(finding.title)+'</span>'+
+          '<span class="case-id">'+esc(finding.finding_id)+'</span><span class="case-subject">'+esc(finding.subject.label)+'</span><span class="case-title">'+esc(finding.title)+'</span>'+
           '<span class="severity '+esc(finding.severity)+'">'+esc(finding.severity)+'</span><span class="state">'+esc(titleCase(finding.current_state))+'</span>'+
           '<span class="state">'+esc(ownerLabel(finding.owner))+'</span><span class="state '+(finding.sla_status==='overdue'?'sla-overdue':'')+'">'+esc(slaLabels[finding.sla_status])+'</span></div>'
       ).join('');
