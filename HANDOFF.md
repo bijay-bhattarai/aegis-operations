@@ -32,12 +32,10 @@ Finding replay decisions: risk acceptance expires inclusively, so a finding is o
 8. Review static demo metrics and risk metadata; do not substitute fabricated scores, assessors or timestamps.
 9. Professional SOPs, retrieval knowledge, orchestration, authenticated evidence ingestion and production model evaluation are still unbuilt.
 
-## Deployment and provenance
+## Local-only operation and provenance
 
-Exported from the committed source used for Site version 2.
-Existing Site: https://aegis-operations.bijay4408.chatgpt.site
-Preserved .openai/hosting.json identifies that Site, but grants no access.
-No GitHub repository or local installation on the user's computer has been created by exporting these files.
+This repository has no deployment manifest or pipeline. Agents may not deploy, publish, or host it.
+The source originated in an earlier prototype export.
 This handoff summarizes relevant project conversation; it is not an imported Codex conversation thread.
 
 ## Recommended first task
