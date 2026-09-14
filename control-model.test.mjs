@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import {createHash} from 'node:crypto';
 import {Control,ControlStatus,SupersedeReason,ArtifactType,ArtifactVerificationStatus,CollectorType,IdentityBasis,createControlRepository,conclusionFor,coverage,coverageStatement,sortControls,effectiveStatus} from './src/control-model.mjs';
+import {createEvidenceRepository} from './src/evidence-model.mjs';
 const input={control_id:'C1',name:'Control',cycle_id:'2026-09',cycle_start:'2026-09-01T00:00:00Z',cycle_end:'2026-10-01T00:00:00Z'};
 const artifact_ref={type:'log_query',locator:'artifact://session/entra/query-1842',content_hash:{algorithm:'sha256',value:'a'.repeat(64)}};
 const evidence={evidence_id:'E1',source:'Entra ID',collected_by:{type:'agent',id:'identity'},collected_at:'2026-09-13T20:00:00Z',artifact_ref};
@@ -43,6 +44,7 @@ test('supersede retains the byte-identical original and changes the current conc
  const before=r.agent.get('C1'),originalBytes=JSON.stringify(before.assessments[0]);
  const expectedDigest=createHash('sha256').update(JSON.stringify([canonicalEvidence(evidence)])).digest('hex');
  assert.equal(before.assessments[0].evidence_digest,expectedDigest);
+ assert.equal(before.assessments[0].evidence_digest,'b8f30a02258f2f84665ee2eb4124bebb1c8936dde02f8f73b01607a7d4609b0d');
  const corrected={assessor:'Second demo reviewer',assessed_at:'2026-09-13T22:00:00Z',assessment_rationale:'Corrected interpretation',supersede_reason:'evidence_reinterpreted'};
  const after=r.reviewer.supersede('C1','tested_pass',corrected);
  assert.equal(JSON.stringify(after.assessments[0]),originalBytes);
@@ -104,6 +106,7 @@ test('assessment evidence digests capture the full evidence set at each assessme
 test('evidence records require immutable structured artifact and collector references',()=>{
  const r=setup(),record=r.agent.collect('C1',evidence),stored=record.evidence[0];
  assert.deepEqual(stored,canonicalEvidence(evidence));
+ assert.equal('evidence_ids' in record,false);
  assert.equal(stored.artifact_ref.verification_status,'unverified');
  assert.throws(()=>{stored.artifact_ref.locator='changed';});
  assert.throws(()=>{stored.artifact_ref.content_hash.value='b'.repeat(64);});
@@ -111,6 +114,13 @@ test('evidence records require immutable structured artifact and collector refer
  assert.deepEqual(Object.values(ArtifactVerificationStatus),['unverified','verified']);
  assert.deepEqual(Object.values(CollectorType),['agent','person']);
  assert.deepEqual(Object.values(IdentityBasis),['self_reported']);
+ const evidenceRepository=createEvidenceRepository(),shared=createControlRepository({evidenceRepository});
+ shared.add(input);shared.add({...input,control_id:'C2'});shared.add({...input,control_id:'C3'});
+ shared.agent.collect('C1',evidence);shared.agent.collect('C2',evidence);
+ assert.equal(evidenceRepository.list().length,1);
+ assert.deepEqual(shared.agent.get('C1').evidence,shared.agent.get('C2').evidence);
+ assert.throws(()=>shared.agent.collect('C3',{...evidence,source:'Defender'}),/Conflicting evidence record/);
+ assert.equal(shared.agent.get('C3').evidence.length,0);
 });
 test('missing or malformed artifact references and unsupported verification are rejected atomically',()=>{
  const r=setup(),withoutArtifact={...evidence};delete withoutArtifact.artifact_ref;

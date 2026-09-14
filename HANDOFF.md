@@ -8,7 +8,7 @@ Framework labels are context, not proof that executable senior-level playbooks e
 
 ## Current implementation
 
-Authored source lives in src/ with no build step. Static HTML/CSS with inline module JavaScript and two local ES modules. No backend, LLM calls, integrations, persistent database, authenticated reviewer roles, artifact resolver or execution engine. Five agent panels contain demo observations. Six action records start pending_approval. Five controls start with either no evidence or collected demo evidence references marked unverified; zero controls initially pass or fail.
+Authored source lives in src/ with no build step. Static HTML/CSS with inline module JavaScript and three local ES modules. A shared immutable EvidenceRepository is the source of evidence records; controls retain evidence IDs internally and resolve their existing external evidence shape on read. No backend, LLM calls, integrations, persistent database, authenticated reviewer roles, artifact resolver or execution engine. Five agent panels contain demo observations. Six action records start pending_approval. Five controls start with either no evidence or collected demo evidence references marked unverified; zero controls initially pass or fail.
 
 The browser model implements immutable snapshots, explicit transition checks, restricted agent/reviewer interfaces and a private assessment capability. These are local domain boundaries, NOT protection against someone controlling the browser runtime.
 

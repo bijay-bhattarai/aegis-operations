@@ -38,6 +38,7 @@ Do not reuse Sites credentials for GitHub.
 
 - src/index.html: UI and demo records
 - src/action-model.mjs: AgentAction state machine and restricted ports
+- src/evidence-model.mjs: immutable evidence records and shared repository
 - src/control-model.mjs: control assessment model and coverage
 - Two Node test suites (54 checks at export)
 - COPY_CHANGES.md and ASSESSMENT_CHANGES.md: before/after ledgers
