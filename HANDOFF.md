@@ -12,9 +12,11 @@ Authored source lives in src/ with no build step. Static HTML/CSS with inline mo
 
 The browser model implements immutable snapshots, explicit transition checks, restricted agent/reviewer interfaces and a private assessment capability. These are local domain boundaries, NOT protection against someone controlling the browser runtime.
 
+Identity spoofing is not defensible until identity is authenticated server-side. Collector-ID normalization catches only accidental and casual agent impersonation cases.
+
 Control cycles are pinned to September 2026 UTC. Time checks reject new evidence or assessments outside that cycle. Do not quietly relabel historical data as current. Add an explicit cycle workflow if requested.
 
-Current checks: 65 Node tests. They cover state transitions, strict UTC calendar validation, data validation, restricted interfaces, structured evidence references, assessment supersession history, a repository-wide source guard against outbound browser transports, some source checks, and script syntax. They do not establish browser usability, production security, regulatory compliance, artifact resolution, or live framework accuracy.
+Current checks: 66 Node tests. They cover state transitions, strict UTC calendar validation, data validation, restricted interfaces, structured evidence references, assessment supersession history, a repository-wide source guard against outbound browser transports, some source checks, and script syntax. They do not establish browser usability, production security, regulatory compliance, artifact resolution, authenticated identity, or live framework accuracy.
 
 ## Important remaining work
 
@@ -22,7 +24,7 @@ Current checks: 65 Node tests. They cover state transitions, strict UTC calendar
 2. Human authorization is not production-grade. Before real use, bind reviewer identity to authenticated server-side roles and implement transactional persistence and tamper-evident audit history.
 3. Keep no-execution/no-external-writes permanent. Backend work must not sneak in containment or remediation connectors.
 4. AgentAction exposes a pure entity transition API and the separate control repository has a module-private human capability; align production authorization boundaries deliberately.
-5. Validate time strings strictly (calendar-invalid dates can normalize in JavaScript), review future-time handling and stale-cycle behavior.
+5. Review future-time handling and stale-cycle behavior.
 6. Revisit action badges/record views for attribution completeness, schema-preserving presentation, and consistent wording.
 7. Coverage "not yet tested" includes evidence_collected and exception_approved, while enum not_assessed specifically denotes no assessment. Keep that distinction documented.
 8. Review static demo metrics and risk metadata; do not substitute fabricated scores, assessors or timestamps.

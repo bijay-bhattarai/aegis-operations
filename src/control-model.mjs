@@ -94,13 +94,17 @@ const evidenceDigest=evidence=>sha256(JSON.stringify([...evidence]
 const collector=input=>{
   if(!input||Object.keys(input).some(k=>!['type','id','identity_basis'].includes(k)))throw Error('Malformed collected_by');
   if(!Object.values(CollectorType).includes(input.type))throw Error('Invalid collected_by type');
-  const id=required(input.id,'collected_by.id');
+  required(input.id,'collected_by.id');
+  const id=input.id;
   if(input.type==='agent'){
     if(input.identity_basis!==undefined)throw Error('identity_basis is only permitted for person collectors');
     if(!AGENT_IDS.includes(id))throw Error('Unknown collecting agent');
     return {type:input.type,id};
   }
-  if(AGENT_IDS.some(agentId=>agentId.toLowerCase()===id.toLowerCase())||/agent/i.test(id))throw Error('Person collector ID cannot identify an agent');
+  const normalizedId=id.normalize('NFKC').replace(/[\u200B-\u200D\uFEFF]/g,'');
+  // NFKC does not fold Cyrillic а; this narrow skeleton catches the documented casual homoglyph case.
+  const agentCheckId=normalizedId.replace(/[\u0410\u0430]/g,'a');
+  if(AGENT_IDS.some(agentId=>agentId.toLowerCase()===agentCheckId.toLowerCase())||/agent/i.test(agentCheckId))throw Error('Person collector ID cannot identify an agent');
   if(input.identity_basis===undefined)throw Error('identity_basis is required for person collectors');
   if(input.identity_basis!==IdentityBasis.self_reported)throw Error('Only self_reported identity_basis is currently accepted');
   return {type:input.type,id,identity_basis:input.identity_basis};

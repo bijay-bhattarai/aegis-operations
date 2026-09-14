@@ -140,6 +140,14 @@ test('collector identities distinguish known agents from self-reported people',(
  const stored=setup().agent.collect('C1',{...evidence,collected_by:{type:'person',id:'Reviewer 42',identity_basis:'self_reported'}}).evidence[0];
  assert.deepEqual(stored.collected_by,{type:'person',id:'Reviewer 42',identity_basis:'self_reported'});
 });
+test('person collector checks normalize casual Unicode agent impersonation while preserving supplied IDs',()=>{
+ for(const id of ['аgent-1','Ag\u200Bent']){
+  assert.throws(()=>setup().agent.collect('C1',{...evidence,collected_by:{type:'person',id,identity_basis:'self_reported'}}),/Person collector ID cannot identify an agent/);
+ }
+ const id='bijay';
+ const stored=setup().agent.collect('C1',{...evidence,collected_by:{type:'person',id,identity_basis:'self_reported'}}).evidence[0];
+ assert.equal(stored.collected_by.id,id);
+});
 test('changing only the artifact content hash changes the assessment evidence digest',()=>{
  const assessedDigest=hash=>{
   const r=setup();r.agent.collect('C1',{...evidence,artifact_ref:{...artifact_ref,content_hash:{algorithm:'sha256',value:hash}}});
