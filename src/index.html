@@ -47,6 +47,7 @@
     .nav button:hover { background: rgba(255,255,255,.035); color: var(--text); }
     .nav button.active { background: var(--mint-dim); color: var(--mint); }
     .nav-icon { width: 18px; height: 18px; display: grid; place-items: center; font-family: ui-monospace, monospace; font-size: .72rem; border: 1px solid currentColor; border-radius: 5px; opacity: .9; }
+    .nav-count { margin-left:auto; min-width:20px; padding:2px 6px; border:1px solid currentColor; border-radius:999px; text-align:center; font:700 .62rem ui-monospace,monospace; }
     .side-bottom { margin-top: auto; }
     .system-card { border: 1px solid var(--line); border-radius: 12px; padding: 12px; background: rgba(255,255,255,.02); }
     .system-row { display:flex; gap: 8px; align-items:center; font-size: .78rem; font-weight: 700; }
@@ -129,6 +130,23 @@
     .confidence { font:700 .72rem ui-monospace,monospace; }
     .state { color:var(--muted); font-size:.7rem; }
     .sla-overdue { color:var(--red); font-weight:800; }
+    .approvals-panel { margin-top:18px; overflow:hidden; }
+    .approval-list { display:grid; }
+    .approval-row { border:0; border-bottom:1px solid var(--line); background:transparent; color:var(--text); padding:16px 18px; text-align:left; cursor:pointer; }
+    .approval-row:last-child { border-bottom:0; }
+    .approval-row:hover { background:rgba(255,255,255,.022); }
+    .approval-summary { display:flex; align-items:center; gap:10px; margin-bottom:12px; }
+    .approval-summary strong { font:800 .8rem ui-monospace,monospace; }
+    .approval-summary .status-badge { margin:0 0 0 auto; }
+    .approval-meta { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:10px 18px; margin:0; }
+    .approval-meta div { min-width:0; }
+    .approval-meta dt { color:var(--quiet); font:700 .59rem ui-monospace,monospace; text-transform:uppercase; }
+    .approval-meta dd { margin:4px 0 0; color:var(--muted); font-size:.7rem; overflow-wrap:anywhere; }
+    .approval-prerequisite { margin:11px 0 0; color:var(--amber); font-size:.7rem; }
+    .empty-queue { padding:24px 18px; color:var(--muted); font-size:.78rem; }
+    .detail-section { border:1px solid var(--line); border-radius:10px; padding:12px; margin:12px 0; }
+    .detail-section h3 { margin:0 0 6px; font-size:.78rem; }
+    .detail-section p { margin:0; color:var(--muted); font-size:.72rem; line-height:1.5; }
     .governance { margin-top:18px; display:grid; grid-template-columns:minmax(0,1fr) auto; align-items:center; gap:18px; padding:17px 18px; }
     .gov-title { display:flex; gap:11px; align-items:flex-start; }
     .gov-shield { width:31px;height:31px;display:grid;place-items:center;border:1px solid rgba(110,242,197,.25);border-radius:9px;color:var(--mint);background:rgba(110,242,197,.05); }
@@ -168,15 +186,15 @@
     .mobile-menu { display:none; }
     @media (max-width: 1060px) {
       .app { grid-template-columns:76px minmax(0,1fr); }
-      .brand-copy,.nav button span:not(.nav-icon),.nav-label,.system-card p,.system-row span:last-child { display:none; }
+      .brand-copy,.nav button span:not(.nav-icon):not(.nav-count),.nav-label,.system-card p,.system-row span:last-child { display:none; }
       .sidebar{padding-inline:12px}.brand{justify-content:center;padding-inline:0}.nav button{justify-content:center;padding:11px}.system-card{display:grid;place-items:center;padding:12px 8px}
       .grid{grid-template-columns:1fr}.activity-panel{grid-column:1;grid-row:auto}.agent-list{grid-template-columns:repeat(5,minmax(115px,1fr));overflow-x:auto}.activity-list{display:grid;grid-template-columns:repeat(2,1fr);gap:0 14px}.activity:nth-child(5){display:none}
     }
     @media (max-width: 720px) {
       .app{display:block}.sidebar{position:fixed;height:auto;left:10px;right:10px;bottom:10px;top:auto;border:1px solid var(--line);border-radius:14px;padding:6px;background:rgba(7,16,15,.96)}
-      .brand,.nav-label,.side-bottom{display:none}.nav{grid-template-columns:repeat(6,1fr);gap:2px}.nav button{padding:9px 4px}.nav button span:not(.nav-icon){display:none}.nav-icon{border:0;font-size:.65rem}
+      .brand,.nav-label,.side-bottom{display:none}.nav{grid-template-columns:repeat(7,1fr);gap:2px}.nav button{padding:9px 4px}.nav button span:not(.nav-icon):not(.nav-count){display:none}.nav-icon{border:0;font-size:.65rem}.nav-count{margin-left:0;padding:1px 4px}
       main{padding:0 14px 90px}.topbar{height:66px;margin-bottom:14px}.scope{display:none}.hero{padding:17px}.hero-top{display:block}.trust{display:inline-block;margin-top:14px}.metric-row{grid-template-columns:repeat(2,1fr);gap:14px}.metric-value{font-size:1.2rem}
-      .activity-list{display:block}.activity:nth-child(5){display:grid}.agent-detail{grid-template-columns:1fr}.frameworks{margin-top:4px}.case-row{grid-template-columns:100px 1fr 76px;padding:12px 14px}.case-row>*:nth-child(4),.case-row>*:nth-child(5),.case-row>*:nth-child(6){display:none}.case-header{display:none}.governance{grid-template-columns:1fr}.modes{overflow:auto}.modes button{flex:1}.activity-panel{display:none}.topbar h1{font-size:1rem}.eyebrow{font-size:.62rem}.agent-list{grid-template-columns:repeat(5,130px)}
+      .activity-list{display:block}.activity:nth-child(5){display:grid}.agent-detail{grid-template-columns:1fr}.frameworks{margin-top:4px}.case-row{grid-template-columns:100px 1fr 76px;padding:12px 14px}.case-row>*:nth-child(4),.case-row>*:nth-child(5),.case-row>*:nth-child(6){display:none}.case-header{display:none}.approval-meta{grid-template-columns:repeat(2,minmax(0,1fr))}.governance{grid-template-columns:1fr}.modes{overflow:auto}.modes button{flex:1}.activity-panel{display:none}.topbar h1{font-size:1rem}.eyebrow{font-size:.62rem}.agent-list{grid-template-columns:repeat(5,130px)}
       .audit-grid{grid-template-columns:1fr}.action-buttons{flex-direction:column}.btn{width:100%}.toast{left:14px;right:14px;bottom:80px;text-align:center}
     }
     @media (prefers-reduced-motion:reduce){*{scroll-behavior:auto!important;transition:none!important}.btn:hover{transform:none}}
@@ -220,6 +238,7 @@
       <div class="nav-label">Workspace</div>
       <nav class="nav">
         <button class="active"><span class="nav-icon">OV</span><span>Overview</span></button>
+        <button data-scroll="approvals"><span class="nav-icon">AP</span><span>Approvals</span><span class="nav-count" id="approval-count">0</span></button>
         <button data-scroll="agents"><span class="nav-icon">AI</span><span>AI workforce</span></button>
         <button data-scroll="cases"><span class="nav-icon">IN</span><span>Findings</span></button>
         <button data-scroll="cases"><span class="nav-icon">VU</span><span>Exposure</span></button>
@@ -264,6 +283,11 @@
         </section>
       </div>
 
+      <section class="panel approvals-panel" id="approvals" aria-labelledby="approvals-title">
+        <div class="panel-head"><h3 id="approvals-title">Approval queue</h3><span id="approval-summary">Actions awaiting approval</span></div>
+        <div class="approval-list" id="approval-list"></div>
+      </section>
+
       <section class="panel cases-panel" id="cases" aria-labelledby="cases-title">
         <div class="panel-head"><h3 id="cases-title">Finding records</h3><span>Projected at the shared snapshot</span></div>
         <div class="case-row case-header"><span>Finding</span><span>Title</span><span>Severity</span><span>State</span><span>Owner</span><span>SLA status</span></div>
@@ -289,12 +313,19 @@
     <div class="drawer-head"><h2 id="action-record-title">Action record</h2><button class="close" id="close-action" aria-label="Close action record">×</button></div>
     <div class="drawer-body">
       <p>Session-only demo. Identities are self-reported, not authenticated. Refresh resets records. Approval never initiates execution.</p>
-      <pre id="action-record"></pre>
+      <div class="verdict"><div><strong id="action-state">Current state</strong><p id="action-state-copy"></p></div></div>
+      <div class="audit-grid"><div class="audit"><small>Agent</small><span id="action-agent"></span></div><div class="audit"><small>Target</small><span id="action-target"></span></div><div class="audit"><small>Rule</small><span id="action-rule"></span></div><div class="audit"><small>Linked finding</small><span id="action-finding"></span></div></div>
+      <div class="detail-section"><h3>Full justification</h3><p id="action-justification"></p></div>
+      <div class="detail-section"><h3>Evidence linked through finding records</h3><div class="evidence" id="action-evidence"></div><p id="action-evidence-empty"></p></div>
+      <div class="detail-section"><h3>Rollback procedure</h3><p id="action-rollback"></p></div>
+      <details><summary>Complete action record</summary><pre id="action-record"></pre></details>
       <label>Approver identity (unverified demo input)<input id="approver" autocomplete="off"></label>
+      <label>Decision timestamp (UTC ISO 8601; reviewer-supplied, unverified)<input id="decision-time" placeholder="YYYY-MM-DDTHH:mm:ssZ" autocomplete="off"></label>
       <label>Decision rationale<textarea id="decision-rationale"></textarea></label>
       <div class="action-buttons"><button class="btn primary" data-decision="approved">Record approval</button><button class="btn" data-decision="rejected">Record rejection</button><button class="btn" id="expire-action">Expire record</button></div>
+      <p id="decision-prerequisite"></p>
       <h3>External execution attestation</h3>
-      <p>Record only work a human performed outside this application, after approval.</p>
+      <p>This separate step records only work a human performed outside this application, after approval. Approval itself performs no action.</p>
       <label>Execution timestamp (UTC ISO 8601)<input id="execution-time" placeholder="YYYY-MM-DDTHH:mm:ss.sssZ"></label>
       <label><input type="checkbox" id="execution-attestation"> I attest that execution occurred outside this app.</label>
       <button class="btn" id="record-execution">Record external execution</button>
@@ -322,6 +353,7 @@
 
   <script type="module">
     import { createActionRepository } from "./action-model.mjs";
+    import { approvalQueue } from "./approval-queue-model.mjs";
     import { coverage, coverageStatement, conclusionFor, effectiveStatus, sortControls } from "./control-model.mjs";
     import { findingIndicators, Severity } from "./finding-model.mjs";
     import { createDemoOverview, OVERVIEW_AS_OF as overviewAsOf, sortOverviewFindings } from "./demo-overview-model.mjs";
@@ -398,30 +430,55 @@
     const esc=value=>String(value).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
     const actionDialog=document.querySelector('#action-dialog');
     let selectedAction=null;
+    const linkedFindingsFor=actionId=>findingRepo.agent.list(overviewAsOf).filter(finding=>finding.action_refs.includes(actionId));
+    const evidenceForAction=actionId=>{
+      const ids=[...new Set(linkedFindingsFor(actionId).flatMap(finding=>finding.evidence_ids))];
+      return ids.map(id=>evidenceRepo.get(id));
+    };
     function renderFeed(){
       document.querySelector('#action-feed').innerHTML=feed.map(([id,title,copy])=>{
         const action=agentPort.get(id);
         return '<article class="activity"><div class="trail"><span class="dot mint"></span></div><div><h4>'+esc(title)+'</h4><p>'+esc(copy)+'</p><a href="#action/'+id+'">'+id+'</a> <span class="status-badge">'+esc(actionStatusLabels[action.status])+'</span></div></article>';
       }).join('');
     }
+    function renderApprovalQueue(){
+      const items=approvalQueue(agentPort.list(),findingRepo.agent.list(overviewAsOf));
+      document.querySelector('#approval-count').textContent=String(items.length);
+      document.querySelector('#approval-summary').textContent=items.length+' action'+(items.length===1?'':'s')+' awaiting approval';
+      document.querySelector('#approval-list').innerHTML=items.length?items.map(action=>
+        '<button class="approval-row" data-approval-id="'+esc(action.action_id)+'">'+
+          '<div class="approval-summary"><strong>'+esc(action.action_id)+'</strong><span>'+esc(action.action_type)+'</span><span class="severity '+esc(action.severity)+'">'+esc(action.severity)+'</span><span class="status-badge">'+esc(actionStatusLabels[action.status])+'</span></div>'+
+          '<dl class="approval-meta"><div><dt>Agent</dt><dd>'+esc(action.agent_id)+'</dd></div><div><dt>Target</dt><dd>'+esc(action.target)+'</dd></div><div><dt>Rule</dt><dd>'+esc(action.rule_id)+'</dd></div><div><dt>Control references</dt><dd>'+esc(action.control_refs.join(', '))+'</dd></div><div><dt>Proposed at</dt><dd>'+esc(action.proposed_at)+'</dd></div><div><dt>Linked finding</dt><dd>'+esc(action.linked_finding_ids.join(', ')||'None')+'</dd></div></dl>'+
+          (action.status==='proposed'?'<p class="approval-prerequisite">The proposing agent must submit this action before a reviewer can approve or reject it.</p>':'')+'</button>'
+      ).join(''):'<p class="empty-queue">No actions are awaiting approval.</p>';
+    }
     function showAction(id){
-      const record=agentPort.get(id); selectedAction=id;
+      const record=agentPort.get(id),findings=linkedFindingsFor(id),evidenceRecords=evidenceForAction(id);selectedAction=id;
       document.querySelector('#action-record-title').textContent=id+' · '+actionStatusLabels[record.status];
-      document.querySelector('#action-record').textContent=JSON.stringify({...record,severity:'Pending review (unassessed proposal metadata withheld)'},null,2);
+      document.querySelector('#action-state').textContent=actionStatusLabels[record.status];
+      document.querySelector('#action-state-copy').textContent=record.status==='proposed'?'The proposing agent must submit this action before a reviewer can decide it.':'This state is recorded in the session-only AgentAction model.';
+      document.querySelector('#action-agent').textContent=record.agent_id;document.querySelector('#action-target').textContent=record.target;
+      document.querySelector('#action-rule').textContent=record.rule_id;document.querySelector('#action-finding').textContent=findings.map(finding=>finding.finding_id).join(', ')||'None';
+      document.querySelector('#action-justification').textContent=record.justification;document.querySelector('#action-rollback').textContent=record.rollback_procedure;
+      document.querySelector('#action-evidence').innerHTML=evidenceRecords.map(evidence=>'<div class="evidence-item"><span aria-hidden="true">·</span><div><strong>'+esc(evidence.evidence_id)+'</strong><span>'+esc(evidence.source)+' · '+esc(evidence.artifact_ref.type)+' · '+esc(evidence.artifact_ref.locator)+' · '+esc(evidence.artifact_ref.content_hash.algorithm)+':'+esc(evidence.artifact_ref.content_hash.value)+'</span></div><code>'+esc(evidence.artifact_ref.verification_status)+'</code></div>').join('');
+      document.querySelector('#action-evidence-empty').textContent=evidenceRecords.length?'':'No evidence is linked through a finding record.';
+      document.querySelector('#action-record').textContent=JSON.stringify(record,null,2);
       document.querySelectorAll('[data-decision]').forEach(b=>b.disabled=record.status!=='pending_approval');
       document.querySelector('#record-execution').disabled=record.status!=='approved';
       document.querySelector('#expire-action').disabled=!['proposed','pending_approval','approved'].includes(record.status);
+      document.querySelector('#decision-prerequisite').textContent=record.status==='proposed'?'Review is unavailable until the proposing agent submits the action.':'';
       if(!actionDialog.open)actionDialog.showModal();
     }
     function navigateAction(){const match=location.hash.match(/^#action\/(ACT-[A-Z]+-\d+)$/);if(match){try{showAction(match[1]);}catch(e){notify(e.message);}}}
     document.querySelector('#close-action').addEventListener('click',()=>actionDialog.close());
     document.querySelector('#action-feed').addEventListener('click',e=>{const a=e.target.closest('a');if(a){e.preventDefault();location.hash=a.hash;showAction(a.hash.split('/')[1]);}});
-    const refresh=()=>{renderFeed();showAction(selectedAction);};
+    document.querySelector('#approval-list').addEventListener('click',event=>{const row=event.target.closest('[data-approval-id]');if(row){location.hash='action/'+row.dataset.approvalId;showAction(row.dataset.approvalId);}});
+    const refresh=()=>{renderFeed();renderApprovalQueue();showAction(selectedAction);};
     document.querySelectorAll('[data-decision]').forEach(button=>button.addEventListener('click',()=>{
       try{
         humanReview.decide(selectedAction,button.dataset.decision,{
           approver:document.querySelector('#approver').value,
-          decided_at:new Date().toISOString(),
+          decided_at:document.querySelector('#decision-time').value,
           decision_rationale:document.querySelector('#decision-rationale').value
         });refresh();notify('Decision recorded for this session. No external action performed.');
       }catch(e){notify(e.message);}
@@ -497,7 +554,7 @@
     renderControls();renderFindings();
 
     window.addEventListener('hashchange',navigateAction);
-    renderFeed();navigateAction();
+    renderFeed();renderApprovalQueue();navigateAction();
     // Only inspection is exposed to agents. No decision, autonomy, or execution tools.
     if(document.modelContext?.registerTool){
       const lifecycle=new AbortController();

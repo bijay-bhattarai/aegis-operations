@@ -4,6 +4,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import vm from 'node:vm';
 import {AgentAction,AGENT_IDS,ACTION_STATUSES,createActionRepository} from './src/action-model.mjs';
+import {approvalQueue} from './src/approval-queue-model.mjs';
 const proposal=agent_id=>({action_id:'ACT-1',agent_id,action_type:'Proposed review',target:'demo',justification:'Evidence',rule_id:'RULE-1',control_refs:['CONTROL-1'],severity:'high',proposed_at:'2026-09-13T20:00:00Z',rollback_procedure:'Human recovery'});
 const decision={approver:'human:demo-reviewer',decided_at:'2026-09-13T21:00:00Z',decision_rationale:'Evidence reviewed'};
 const edges={proposed:['pending_approval','expired'],pending_approval:['approved','rejected','expired'],approved:['executed','expired'],rejected:[],expired:[],executed:[]};
@@ -40,6 +41,29 @@ test('approval requires identity, timestamp and rationale; failed writes are ato
   const a=at('pending_approval');assert.throws(()=>a.transition('approved',bad));assert.equal(a.record.status,'pending_approval');
  }
 });
+test('approval and rejection cannot be backdated before the proposal',()=>{
+ for(const outcome of ['approved','rejected']){
+  const a=at('pending_approval'),before=a.record;
+  assert.throws(()=>a.transition(outcome,{...decision,decided_at:'2026-09-13T19:59:59Z'}),/Decision precedes proposal/);
+  assert.deepEqual(a.record,before);
+ }
+});
+test('approval queue filters, links, sorts and returns immutable records',()=>{
+ const repo=createActionRepository();
+ const values=[
+  {...proposal('soc'),action_id:'ACT-LOW',severity:'low',proposed_at:'2026-09-10T00:00:00Z'},
+  {...proposal('vuln'),action_id:'ACT-CRIT-NEW',severity:'critical',proposed_at:'2026-09-12T00:00:00Z'},
+  {...proposal('identity'),action_id:'ACT-CRIT-OLD',severity:'critical',proposed_at:'2026-09-11T00:00:00Z'},
+  {...proposal('compliance'),action_id:'ACT-DONE',severity:'high',proposed_at:'2026-09-09T00:00:00Z'}
+ ];
+ for(const value of values)repo.agent.propose(value);
+ for(const id of ['ACT-CRIT-NEW','ACT-CRIT-OLD','ACT-DONE'])repo.agent.submit(id);
+ repo.review.decide('ACT-DONE','rejected',{...decision,decided_at:'2026-09-13T21:00:00Z'});
+ const queue=approvalQueue(repo.agent.list(),[{finding_id:'F-1',action_refs:['ACT-CRIT-OLD']},{finding_id:'F-2',action_refs:['ACT-CRIT-OLD','ACT-LOW']}]);
+ assert.deepEqual(queue.map(action=>action.action_id),['ACT-CRIT-OLD','ACT-CRIT-NEW','ACT-LOW']);
+ assert.deepEqual(queue[0].linked_finding_ids,['F-1','F-2']);assert.equal(queue[2].status,'proposed');
+ assert.throws(()=>queue.push({}));assert.throws(()=>queue[0].linked_finding_ids.push('F-3'));
+});
 test('constructor and snapshots cannot bypass transitions',()=>{
  for(const status of ACTION_STATUSES.filter(s=>s!=='proposed'))assert.throws(()=>new AgentAction({...proposal('soc'),status}));
  assert.throws(()=>new AgentAction({...proposal('soc'),approver:'fake'}));
@@ -62,6 +86,18 @@ test('UI syntax and no outbound writer APIs or agent decision tools',()=>{
  assert.doesNotMatch(h,/set_default_autonomy|decide_security_case|data-mode|data-action=/);
  assert.match(h,/connect-src 'none'/);assert.match(h,/form-action 'none'/);
  assert.match(h,/action\.status/);assert.match(h,/href="#action\//);
+});
+test('approval queue UI exposes review metadata and keeps execution separate',()=>{
+ const h=fs.readFileSync('src/index.html','utf8');
+ assert.match(h,/<span>Overview<\/span><\/button>\s*<button data-scroll="approvals">[\s\S]*?<span>Approvals<\/span><span class="nav-count" id="approval-count">0<\/span>/);
+ assert.match(h,/approvalQueue\(agentPort\.list\(\),findingRepo\.agent\.list\(overviewAsOf\)\)/);
+ for(const field of ['action.action_id','action.agent_id','action.action_type','action.target','action.severity','action.rule_id','action.control_refs','action.proposed_at','action.linked_finding_ids'])assert.match(h,new RegExp(field.replace('.','\\.')));
+ assert.match(h,/The proposing agent must submit this action before a reviewer can approve or reject it\./);
+ assert.match(h,/Decision timestamp \(UTC ISO 8601; reviewer-supplied, unverified\)/);
+ assert.match(h,/decided_at:document\.querySelector\('#decision-time'\)\.value/);
+ assert.doesNotMatch(h,/decided_at:new Date\(\)\.toISOString\(\)/);
+ assert.match(h,/Full justification[\s\S]*Evidence linked through finding records[\s\S]*Rollback procedure/);
+ assert.match(h,/This separate step records only work a human performed outside this application, after approval\. Approval itself performs no action\./);
 });
 test('entire src tree contains no fetch, XMLHttpRequest, or sendBeacon',()=>{
  const files=[];

@@ -50,5 +50,9 @@ export function createDemoOverview(){
   for(const seed of findingSeeds)findingRepo.agent.identify(seed);
   findingRepo.review.dispose('F-DEMO-MEDIUM','risk_accepted',{acceptance_expires_at:'2026-09-10T00:00:00Z'},{actor_id:'demo-reviewer',occurred_at:'2026-08-02T00:00:00Z',reason:'Time-limited demo acceptance'});
   findingRepo.review.dispose('F-DEMO-CLOSED','remediated',{},{actor_id:'demo-reviewer',occurred_at:'2026-09-02T00:00:00Z',reason:'Human-recorded demo disposition'});
+  for(const [finding_id,action_id,agent_id] of [
+    ['F-DEMO-CRITICAL','ACT-VUL-001','vuln'],['F-DEMO-CRITICAL','ACT-SE-001','engineering'],
+    ['F-DEMO-HIGH','ACT-SOC-001','soc'],['F-DEMO-MEDIUM','ACT-ID-001','identity']
+  ])findingRepo.agent.linkAction(finding_id,action_id,{agent_id,occurred_at:'2026-09-13T20:30:00Z',reason:'Demo proposal linked to finding'});
   return Object.freeze({evidenceRepo,controlRepo,findingRepo,cycle:OVERVIEW_CYCLE,as_of:OVERVIEW_AS_OF});
 }

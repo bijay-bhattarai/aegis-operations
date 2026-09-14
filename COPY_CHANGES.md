@@ -190,3 +190,19 @@ Agent tiles now describe each role’s work: correlating operational evidence, p
 | Within sla | Within SLA |
 
 Finding rows are ordered with overdue records first, then by computed severity. Each row presents the owner and SLA state from the projection at the shared snapshot.
+
+## Approval queue
+
+- Approvals
+- Actions awaiting approval
+- Full justification
+- Evidence linked through finding records
+- Rollback procedure
+- Approver identity (unverified demo input)
+- Decision timestamp (UTC ISO 8601; reviewer-supplied, unverified)
+- Decision rationale
+- Record approval
+- Record rejection
+- External execution attestation
+
+Proposed actions explain that the proposing agent must submit them before a reviewer can decide. Approval copy states that the decision performs no action; external execution remains a separate human attestation.

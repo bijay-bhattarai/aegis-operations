@@ -268,6 +268,8 @@ test('dashboard demo findings cover every severity, closure, overdue state and e
  const expired=findingRepo.agent.get('F-DEMO-MEDIUM',as_of),closed=findingRepo.agent.get('F-DEMO-CLOSED',as_of);
  assert.equal(expired.disposition,'risk_accepted');assert.equal(expired.current_state,'open');
  assert.equal(closed.current_state,'closed');
+ assert.deepEqual(findingRepo.agent.get('F-DEMO-CRITICAL',as_of).action_refs,['ACT-VUL-001','ACT-SE-001']);
+ assert.deepEqual(findingRepo.agent.get('F-DEMO-HIGH',as_of).action_refs,['ACT-SOC-001']);
 });
 
 test('dashboard prominence ranks not_assessed above overdue and overdue above open',()=>{
