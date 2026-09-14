@@ -49,6 +49,12 @@ test('constructor and snapshots cannot bypass transitions',()=>{
 test('execution time cannot precede approval',()=>{
  const a=at('approved');assert.throws(()=>a.transition('executed',{executed_at:'2026-09-13T20:00:00Z'}));assert.equal(a.record.status,'approved');
 });
+test('action timestamps reject nonexistent calendar dates and accept a valid leap day',()=>{
+ for(const date of ['2026-02-30','2025-02-29','2026-04-31','2026-13-01']){
+  assert.throws(()=>new AgentAction({...proposal('soc'),proposed_at:date+'T00:00:00Z'}),/UTC timestamp/);
+ }
+ assert.equal(new AgentAction({...proposal('soc'),proposed_at:'2028-02-29T00:00:00Z'}).record.proposed_at,'2028-02-29T00:00:00Z');
+});
 test('UI syntax and no outbound writer APIs or agent decision tools',()=>{
  const h=fs.readFileSync('src/index.html','utf8'),m=fs.readFileSync('src/action-model.mjs','utf8');
  new vm.Script(h.match(/<script type="module">([\s\S]*?)<\/script>/)[1].replace(/import .*?;/g,''));

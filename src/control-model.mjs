@@ -17,7 +17,18 @@ export const CollectorType = Object.freeze({agent:'agent',person:'person'});
 export const IdentityBasis = Object.freeze({self_reported:'self_reported'});
 const humanCapability=Symbol('human-review');
 const required=(v,k)=>{if(typeof v!=='string'||!v.trim())throw Error(k+' is required');return v.trim();};
-const utc=(v,k)=>{required(v,k);if(!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d{3})?Z$/.test(v)||!Number.isFinite(Date.parse(v)))throw Error(k+' must be a UTC timestamp');return v;};
+const calendarDate=match=>{
+  const year=Number(match[1]),month=Number(match[2]),day=Number(match[3]);
+  const leap=year%4===0&&(year%100!==0||year%400===0);
+  const days=[31,leap?29:28,31,30,31,30,31,31,30,31,30,31];
+  return month>=1&&month<=12&&day>=1&&day<=days[month-1];
+};
+const utc=(v,k)=>{
+  required(v,k);
+  const match=/^(\d{4})-(\d{2})-(\d{2})T\d{2}:\d{2}:\d{2}(\.\d{3})?Z$/.exec(v);
+  if(!match||!calendarDate(match)||!Number.isFinite(Date.parse(v)))throw Error(k+' must be a UTC timestamp');
+  return v;
+};
 const conclusions=['tested_pass','tested_fail','exception_approved'];
 const freezeEvidence=e=>Object.freeze({...e,
   collected_by:Object.freeze({...e.collected_by}),

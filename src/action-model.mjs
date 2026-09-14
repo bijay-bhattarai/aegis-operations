@@ -2,7 +2,18 @@ export const ACTION_STATUSES = Object.freeze(['proposed','pending_approval','app
 export const AGENT_IDS = Object.freeze(['soc','vuln','identity','compliance','engineering']);
 const edges = Object.freeze({ proposed:['pending_approval','expired'], pending_approval:['approved','rejected','expired'], approved:['executed','expired'], rejected:[], expired:[], executed:[] });
 const text = (value, field) => { if (typeof value !== 'string' || !value.trim()) throw new Error(`${field} is required`); return value.trim(); };
-const timestamp = (value, field) => { text(value,field); if (!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?Z$/.test(value) || !Number.isFinite(Date.parse(value))) throw new Error(`${field} must be a UTC timestamp`); return value; };
+const calendarDate = match => {
+  const year=Number(match[1]),month=Number(match[2]),day=Number(match[3]);
+  const leap=year%4===0&&(year%100!==0||year%400===0);
+  const days=[31,leap?29:28,31,30,31,30,31,31,30,31,30,31];
+  return month>=1&&month<=12&&day>=1&&day<=days[month-1];
+};
+const timestamp = (value, field) => {
+  text(value,field);
+  const match=/^(\d{4})-(\d{2})-(\d{2})T\d{2}:\d{2}:\d{2}(\.\d+)?Z$/.exec(value);
+  if (!match || !calendarDate(match) || !Number.isFinite(Date.parse(value))) throw new Error(`${field} must be a UTC timestamp`);
+  return value;
+};
 const snapshot = value => Object.freeze({...value,control_refs:Object.freeze([...value.control_refs])});
 
 // Pure domain entity: private state, immutable snapshots, no I/O or executor.

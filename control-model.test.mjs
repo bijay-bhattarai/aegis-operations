@@ -152,6 +152,15 @@ test('evidence cannot inject status, cannot be empty or outside cycle',()=>{
  for(const bad of [{...evidence,status:'tested_pass'},{...evidence,source:''},{...evidence,collected_at:'2026-10-01T00:00:00Z'}])assert.throws(()=>r.agent.collect('C1',bad));
  assert.equal(r.agent.get('C1').status,'not_assessed');
 });
+test('control timestamps reject nonexistent calendar dates and accept a valid leap day',()=>{
+ for(const date of ['2026-02-30','2025-02-29','2026-04-31','2026-13-01']){
+  assert.throws(()=>new Control({...input,cycle_start:date+'T00:00:00Z',cycle_end:'2027-01-01T00:00:00Z'}),/UTC timestamp/);
+ }
+ const r=createControlRepository();
+ r.add({...input,cycle_id:'2028-02',cycle_start:'2028-02-01T00:00:00Z',cycle_end:'2028-03-01T00:00:00Z'});
+ const record=r.agent.collect('C1',{...evidence,collected_at:'2028-02-29T00:00:00Z'});
+ assert.equal(record.evidence[0].collected_at,'2028-02-29T00:00:00Z');
+});
 test('missing assessor suppresses conclusions, including malformed imports',()=>{
  for(const status of ['tested_pass','tested_fail','exception_approved']){
   assert.equal(conclusionFor({status,assessed_at:assessment.assessed_at}),null);

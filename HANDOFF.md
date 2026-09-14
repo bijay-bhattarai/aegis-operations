@@ -14,7 +14,7 @@ The browser model implements immutable snapshots, explicit transition checks, re
 
 Control cycles are pinned to September 2026 UTC. Time checks reject new evidence or assessments outside that cycle. Do not quietly relabel historical data as current. Add an explicit cycle workflow if requested.
 
-Current checks: 63 Node tests. They cover state transitions, data validation, restricted interfaces, structured evidence references, assessment supersession history, a repository-wide source guard against outbound browser transports, some source checks, and script syntax. They do not establish browser usability, production security, regulatory compliance, artifact resolution, or live framework accuracy.
+Current checks: 65 Node tests. They cover state transitions, strict UTC calendar validation, data validation, restricted interfaces, structured evidence references, assessment supersession history, a repository-wide source guard against outbound browser transports, some source checks, and script syntax. They do not establish browser usability, production security, regulatory compliance, artifact resolution, or live framework accuracy.
 
 ## Important remaining work
 
