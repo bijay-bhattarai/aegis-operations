@@ -2,6 +2,10 @@
 
 Aegis Operations is a local prototype for supervised security operations. Agents identify observations and propose actions; human reviewers assess controls and decide whether to approve or reject proposals. The application records those decisions and external execution attestations but never performs a security action. Its ten identity findings come from a hash-verified export prepared from a real Microsoft Entra ID lab tenant; the committed identifiers are sanitized sequential placeholders on `contoso.onmicrosoft.com`, and severity is computed from a versioned policy rather than asserted by the rule engine.
 
+![Findings view showing subjects, computed severity, ownership queues, and SLA status](docs/screenshots/findings-overview.png)
+
+*The complete identity finding set, ordered with overdue critical and high findings first.*
+
 <!-- identity-results:start -->
 ## Identity pipeline results
 
@@ -51,6 +55,10 @@ Open http://127.0.0.1:8000 in a browser. Use HTTP because the application uses E
 - `*.test.mjs`: Node test suites covering the domain models, generated-data drift, and interface constraints
 - `docs/history/`: historical copy and assessment ledgers with their source diffs
 - `AGENTS.md`, `MASTER.md`, and `HANDOFF.md`: project rules, charter, and implementation limitations
+
+![Person-filtered audit view showing attributed control assessment decisions](docs/screenshots/audit-human-decisions.png)
+
+*The Person filter isolates the two human-recorded control assessments in the current session data.*
 
 ## What this is not
 
